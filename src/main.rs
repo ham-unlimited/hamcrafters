@@ -1,4 +1,7 @@
-use std::net::{TcpListener, TcpStream};
+use std::{
+    io::{Cursor, Read},
+    net::{TcpListener, TcpStream},
+};
 
 use log::info;
 use serde::Deserialize;
@@ -21,41 +24,89 @@ fn main() {
 
     for stream in listener.incoming() {
         let stream = stream.expect("Failed to read stream");
-        handle_client(stream);
+        let mut handler = ClientHandler::new(stream);
+        handler.run();
     }
 }
 
-fn handle_client(mut stream: TcpStream) {
-    let source_ip = stream.peer_addr().expect("Failed to read peer addr");
-    info!("Receiving connection from {:?}", source_ip);
+#[derive(Debug, Clone)]
+enum ClientState {
+    New,
+    Status,
+    Login,
+}
 
-    loop {
-        let length = stream.get_var_int().expect("Failed to read packet length");
-        let packet_id = stream.get_var_int().expect("Failed to read packet ID");
-        let mut deserializer = Deserializer::new(stream);
+struct ClientHandler {
+    stream: TcpStream,
+    state: ClientState,
+}
 
-        let handshake =
-            Handshake::deserialize(&mut deserializer).expect("Failed to deserialize Deserializer");
-
-        // let buf_len = (length.0 as usize) - packet_id.written_size();
-
-        if handshake.protocol_version.0 as usize != SUPPORTED_MINECRAFT_PROTOCOL_VERSION {
-            println!(
-                "Unsupported protocol version {}",
-                handshake.protocol_version.0
-            );
-            // TODO: Close?
-            break;
+impl ClientHandler {
+    fn new(stream: TcpStream) -> Self {
+        Self {
+            stream,
+            state: ClientState::New,
         }
+    }
 
-        log::info!(
-            "Length: {}, ID: {:X}, Packet: {:?}",
-            length.0,
-            packet_id.0,
-            handshake,
-        );
+    fn run(&mut self) {
+        let source_ip = self.stream.peer_addr().expect("Failed to read peer addr");
+        info!("Receiving connection from {:?}", source_ip);
 
-        break;
+        let mut buffer = Vec::new();
+
+        loop {
+            // TODO: Security...
+            let length = self
+                .stream
+                .get_var_int()
+                .expect("Failed to read packet length");
+            let length = length.0 as usize;
+            info!("Got new package of length: {length}");
+
+            // Resize buffer if needed
+            if buffer.len() < length {
+                buffer.resize(length, 0);
+            }
+
+            self.stream
+                .read_exact(&mut buffer[..length])
+                .expect("Failed to read buffer");
+
+            let mut cursor = Cursor::new(&buffer[..length]);
+
+            self.handle_packet(&mut cursor);
+        }
+    }
+
+    fn handle_packet<T>(&mut self, cursor: &mut Cursor<T>)
+    where
+        T: AsRef<[u8]>,
+    {
+        let packet_id: VarInt = cursor.get_var_int().expect("Failed to read packet ID");
+        let packet_id = packet_id.0 as usize;
+        let mut deserializer = Deserializer::new(cursor);
+
+        match (&self.state, packet_id) {
+            (ClientState::New, 0) => {
+                let handshake = Handshake::deserialize(&mut deserializer)
+                    .expect("Failed to deserialize Deserializer");
+
+                if handshake.protocol_version.0 as usize != SUPPORTED_MINECRAFT_PROTOCOL_VERSION {
+                    println!(
+                        "Unsupported protocol version {}",
+                        handshake.protocol_version.0
+                    );
+                    panic!("Illegal protocol version");
+                }
+
+                log::info!("ID: {:X}, Packet: {:?}", packet_id, handshake);
+            }
+            _ => unimplemented!(
+                "Unimplemented packet of ID {packet_id:?} during state {:?}",
+                self.state
+            ),
+        }
     }
 }
 

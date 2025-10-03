@@ -74,7 +74,6 @@ macro_rules! get_number_be {
 }
 
 impl<R: Read> NetworkReadExt for R {
-    //TODO: Macroize this
     fn get_i8(&mut self) -> Result<i8, ReadingError> {
         let mut buf = [0u8];
         self.read_exact(&mut buf)
