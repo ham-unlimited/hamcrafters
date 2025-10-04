@@ -1,5 +1,5 @@
 pub mod deserializer;
-// pub mod serializer;
+pub mod serializer;
 use std::io::{Error, Read, Write};
 
 pub trait PacketWrite {

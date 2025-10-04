@@ -1,5 +1,5 @@
 use std::{
-    io::{Error, ErrorKind, Read},
+    io::{Error, ErrorKind, Read, Write},
     num::NonZeroUsize,
     ops::Deref,
 };
@@ -11,7 +11,7 @@ use serde::{
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
-    coms::{NetworkReadExt, ReadingError},
+    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
     serial::PacketRead,
 };
 
@@ -36,18 +36,18 @@ impl VarInt {
         }
     }
 
-    // pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
-    //     let mut val = self.0;
-    //     loop {
-    //         let b: u8 = val as u8 & 0x7F;
-    //         val >>= 7;
-    //         write.write_u8(if val == 0 { b } else { b | 0x80 })?;
-    //         if val == 0 {
-    //             break;
-    //         }
-    //     }
-    //     Ok(())
-    // }
+    pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
+        let mut val = self.0;
+        loop {
+            let b: u8 = val as u8 & 0x7F;
+            val >>= 7;
+            write.write_u8(if val == 0 { b } else { b | 0x80 })?;
+            if val == 0 {
+                break;
+            }
+        }
+        Ok(())
+    }
 
     // TODO: Validate that the first byte will not overflow a i32
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {

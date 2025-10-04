@@ -1,11 +1,18 @@
-use std::{io::Read, num::NonZeroUsize, ops::Deref};
+use std::{
+    io::{Error, Read, Write},
+    num::NonZeroUsize,
+    ops::Deref,
+};
 
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
     de::{self, SeqAccess, Visitor},
 };
 
-use crate::coms::{NetworkReadExt, ReadingError};
+use crate::{
+    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    serial::PacketWrite,
+};
 
 pub type VarLongType = i64;
 
@@ -28,20 +35,20 @@ impl VarLong {
         }
     }
 
-    // pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
-    //     let mut x = self.0;
-    //     loop {
-    //         let byte = (x & 0x7F) as u8;
-    //         x >>= 7;
-    //         if x == 0 {
-    //             write.write_u8(byte)?;
-    //             break;
-    //         }
-    //         write.write_u8(byte | 0x80)?;
-    //     }
+    pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
+        let mut x = self.0;
+        loop {
+            let byte = (x & 0x7F) as u8;
+            x >>= 7;
+            if x == 0 {
+                write.write_u8(byte)?;
+                break;
+            }
+            write.write_u8(byte | 0x80)?;
+        }
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     // TODO: Validate that the first byte will not overflow a i64
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
@@ -148,17 +155,17 @@ impl<'de> Deserialize<'de> for VarLong {
     }
 }
 
-// impl PacketWrite for VarLong {
-//     fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-//         let mut value = (self.0 << 1) ^ (self.0 >> 63);
-//         loop {
-//             let b: u8 = value as u8 & 127;
-//             value >>= 7;
-//             writer.write_all(&if value == 0 { [b] } else { [b | 128] })?;
-//             if value == 0 {
-//                 break;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+impl PacketWrite for VarLong {
+    fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        let mut value = (self.0 << 1) ^ (self.0 >> 63);
+        loop {
+            let b: u8 = value as u8 & 127;
+            value >>= 7;
+            writer.write_all(&if value == 0 { [b] } else { [b | 128] })?;
+            if value == 0 {
+                break;
+            }
+        }
+        Ok(())
+    }
+}

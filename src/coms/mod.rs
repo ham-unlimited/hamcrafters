@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{Read, Write};
 
 use thiserror::Error;
 
@@ -15,6 +15,16 @@ pub enum ReadingError {
     #[error("too large: {0}")]
     TooLarge(String),
     #[error("{0}")]
+    Message(String),
+}
+
+#[derive(Debug, Error)]
+pub enum WritingError {
+    #[error("IO error: {0}")]
+    IoError(std::io::Error),
+    #[error("Serde failure: {0}")]
+    Serde(String),
+    #[error("Failed to serialize packet: {0}")]
     Message(String),
 }
 
@@ -213,4 +223,189 @@ impl<R: Read> NetworkReadExt for R {
         }
         Ok(list)
     }
+}
+
+pub trait NetworkWriteExt {
+    fn write_i8(&mut self, data: i8) -> Result<(), WritingError>;
+    fn write_u8(&mut self, data: u8) -> Result<(), WritingError>;
+    fn write_i16_be(&mut self, data: i16) -> Result<(), WritingError>;
+    fn write_u16_be(&mut self, data: u16) -> Result<(), WritingError>;
+    fn write_i32_be(&mut self, data: i32) -> Result<(), WritingError>;
+    fn write_u32_be(&mut self, data: u32) -> Result<(), WritingError>;
+    fn write_i64_be(&mut self, data: i64) -> Result<(), WritingError>;
+    fn write_u64_be(&mut self, data: u64) -> Result<(), WritingError>;
+    fn write_f32_be(&mut self, data: f32) -> Result<(), WritingError>;
+    fn write_f64_be(&mut self, data: f64) -> Result<(), WritingError>;
+    fn write_slice(&mut self, data: &[u8]) -> Result<(), WritingError>;
+
+    fn write_bool(&mut self, data: bool) -> Result<(), WritingError> {
+        if data {
+            self.write_u8(1)
+        } else {
+            self.write_u8(0)
+        }
+    }
+    // fn write_fixed_bitset(&mut self, bits: usize, bit_set: FixedBitSet) -> Result<(), WritingError>;
+    fn write_var_int(&mut self, data: &VarInt) -> Result<(), WritingError>;
+    fn write_var_uint(&mut self, data: &VarUInt) -> Result<(), WritingError>;
+    fn write_var_long(&mut self, data: &VarLong) -> Result<(), WritingError>;
+    fn write_string_bounded(&mut self, data: &str, bound: usize) -> Result<(), WritingError>;
+    fn write_string(&mut self, data: &str) -> Result<(), WritingError>;
+    // fn write_resource_location(&mut self, data: &ResourceLocation) -> Result<(), WritingError>;
+
+    fn write_uuid(&mut self, data: &uuid::Uuid) -> Result<(), WritingError> {
+        let (first, second) = data.as_u64_pair();
+        self.write_u64_be(first)?;
+        self.write_u64_be(second)
+    }
+
+    // fn write_bitset(&mut self, bitset: &BitSet) -> Result<(), WritingError>;
+
+    fn write_option<G>(
+        &mut self,
+        data: &Option<G>,
+        writer: impl FnOnce(&mut Self, &G) -> Result<(), WritingError>,
+    ) -> Result<(), WritingError> {
+        if let Some(data) = data {
+            self.write_bool(true)?;
+            writer(self, data)
+        } else {
+            self.write_bool(false)
+        }
+    }
+
+    fn write_list<G>(
+        &mut self,
+        list: &[G],
+        writer: impl Fn(&mut Self, &G) -> Result<(), WritingError>,
+    ) -> Result<(), WritingError> {
+        self.write_var_int(&list.len().try_into().map_err(|_| {
+            WritingError::Message(format!("{} isn't representable as a VarInt", list.len()))
+        })?)?;
+
+        for data in list {
+            writer(self, data)?;
+        }
+
+        Ok(())
+    }
+
+    // fn write_nbt(&mut self, data: &NbtTag) -> Result<(), WritingError>;
+}
+
+macro_rules! write_number_be {
+    ($name:ident, $type:ty) => {
+        fn $name(&mut self, data: $type) -> Result<(), WritingError> {
+            self.write_all(&data.to_be_bytes())
+                .map_err(WritingError::IoError)
+        }
+    };
+}
+
+impl<W: Write> NetworkWriteExt for W {
+    fn write_i8(&mut self, data: i8) -> Result<(), WritingError> {
+        self.write_all(&data.to_be_bytes())
+            .map_err(WritingError::IoError)
+    }
+
+    fn write_u8(&mut self, data: u8) -> Result<(), WritingError> {
+        self.write_all(&data.to_be_bytes())
+            .map_err(WritingError::IoError)
+    }
+
+    write_number_be!(write_i16_be, i16);
+    write_number_be!(write_u16_be, u16);
+    write_number_be!(write_i32_be, i32);
+    write_number_be!(write_u32_be, u32);
+    write_number_be!(write_i64_be, i64);
+    write_number_be!(write_u64_be, u64);
+    write_number_be!(write_f32_be, f32);
+    write_number_be!(write_f64_be, f64);
+
+    fn write_slice(&mut self, data: &[u8]) -> Result<(), WritingError> {
+        self.write_all(data).map_err(WritingError::IoError)
+    }
+
+    // fn write_fixed_bitset(
+    //     &mut self,
+    //     bits: usize,
+    //     bit_set: FixedBitSet,
+    // ) -> Result<(), WritingError> {
+    //     let new_length = bits.div_ceil(8);
+    //     let mut new_vec = vec![0u8; new_length];
+    //     let bytes_to_copy = std::cmp::min(bit_set.len(), new_length);
+
+    //     new_vec[..bytes_to_copy].copy_from_slice(&bit_set[..bytes_to_copy]);
+    //     self.write_slice(&new_vec)?;
+
+    //     Ok(())
+    // }
+
+    fn write_var_int(&mut self, data: &VarInt) -> Result<(), WritingError> {
+        data.encode(self)
+    }
+
+    fn write_var_uint(&mut self, data: &VarUInt) -> Result<(), WritingError> {
+        data.encode(self)
+    }
+
+    fn write_var_long(&mut self, data: &VarLong) -> Result<(), WritingError> {
+        data.encode(self)
+    }
+
+    fn write_string_bounded(&mut self, data: &str, bound: usize) -> Result<(), WritingError> {
+        assert!(data.len() <= bound);
+        self.write_var_int(&data.len().try_into().map_err(|_| {
+            WritingError::Message(format!("{} isn't representable as a VarInt", data.len()))
+        })?)?;
+
+        self.write_all(data.as_bytes())
+            .map_err(WritingError::IoError)
+    }
+
+    fn write_string(&mut self, data: &str) -> Result<(), WritingError> {
+        self.write_string_bounded(data, i16::MAX as usize)
+    }
+
+    // fn write_resource_location(&mut self, data: &ResourceLocation) -> Result<(), WritingError> {
+    //     self.write_string_bounded(&data.to_string(), ResourceLocation::MAX_SIZE.get())
+    // }
+
+    // fn write_bitset(&mut self, data: &BitSet) -> Result<(), WritingError> {
+    //     data.encode(self)
+    // }
+
+    fn write_option<G>(
+        &mut self,
+        data: &Option<G>,
+        writer: impl FnOnce(&mut Self, &G) -> Result<(), WritingError>,
+    ) -> Result<(), WritingError> {
+        if let Some(data) = data {
+            self.write_bool(true)?;
+            writer(self, data)
+        } else {
+            self.write_bool(false)
+        }
+    }
+
+    fn write_list<G>(
+        &mut self,
+        list: &[G],
+        writer: impl Fn(&mut Self, &G) -> Result<(), WritingError>,
+    ) -> Result<(), WritingError> {
+        self.write_var_int(&(list.len() as i32).into())?;
+        for data in list {
+            writer(self, data)?;
+        }
+
+        Ok(())
+    }
+
+    // fn write_nbt(&mut self, data: &NbtTag) -> Result<(), WritingError> {
+    //     let mut write_adaptor = WriteAdaptor::new(self);
+    //     data.serialize(&mut write_adaptor)
+    //         .map_err(|e| WritingError::Message(e.to_string()))?;
+
+    //     Ok(())
+    // }
 }

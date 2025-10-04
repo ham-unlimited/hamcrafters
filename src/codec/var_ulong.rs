@@ -1,5 +1,5 @@
 use std::{
-    io::{Error, Read},
+    io::{Error, Read, Write},
     num::NonZeroUsize,
     ops::Deref,
 };
@@ -10,8 +10,8 @@ use serde::{
 };
 
 use crate::{
-    coms::{NetworkReadExt, ReadingError},
-    serial::PacketRead,
+    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    serial::{PacketRead, PacketWrite},
 };
 
 pub type VarULongType = u64;
@@ -35,20 +35,20 @@ impl VarULong {
         }
     }
 
-    // pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
-    //     let mut x = self.0;
-    //     loop {
-    //         let byte = (x & 0x7F) as u8;
-    //         x >>= 7;
-    //         if x == 0 {
-    //             write.write_u8(byte)?;
-    //             break;
-    //         }
-    //         write.write_u8(byte | 0x80)?;
-    //     }
+    pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
+        let mut x = self.0;
+        loop {
+            let byte = (x & 0x7F) as u8;
+            x >>= 7;
+            if x == 0 {
+                write.write_u8(byte)?;
+                break;
+            }
+            write.write_u8(byte | 0x80)?;
+        }
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     // TODO: Validate that the first byte will not overflow a i64
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
@@ -155,22 +155,22 @@ impl<'de> Deserialize<'de> for VarULong {
     }
 }
 
-// impl PacketWrite for VarULong {
-//     fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-//         let mut x = self.0;
-//         loop {
-//             let byte = (x & 0x7F) as u8;
-//             x >>= 7;
-//             if x == 0 {
-//                 byte.write(writer)?;
-//                 break;
-//             }
-//             (byte | 0x80).write(writer)?;
-//         }
+impl PacketWrite for VarULong {
+    fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        let mut x = self.0;
+        loop {
+            let byte = (x & 0x7F) as u8;
+            x >>= 7;
+            if x == 0 {
+                byte.write(writer)?;
+                break;
+            }
+            (byte | 0x80).write(writer)?;
+        }
 
-//         Ok(())
-//     }
-// }
+        Ok(())
+    }
+}
 
 impl PacketRead for VarULong {
     fn read<R: Read>(reader: &mut R) -> Result<Self, Error> {

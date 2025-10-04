@@ -1,5 +1,5 @@
 use std::{
-    io::{Error, ErrorKind, Read},
+    io::{Error, ErrorKind, Read, Write},
     num::NonZeroUsize,
 };
 
@@ -10,8 +10,8 @@ use serde::{
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
-    coms::{NetworkReadExt, ReadingError},
-    serial::PacketRead,
+    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    serial::{PacketRead, PacketWrite},
 };
 
 pub type VarUIntType = u32;
@@ -32,21 +32,21 @@ impl VarUInt {
         (32 - self.0.leading_zeros() as usize).max(1).div_ceil(7)
     }
 
-    // pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
-    //     let mut val = self.0;
-    //     loop {
-    //         let mut byte = (val & 0x7F) as u8;
-    //         val >>= 7;
-    //         if val != 0 {
-    //             byte |= 0x80;
-    //         }
-    //         write.write_u8(byte)?;
-    //         if val == 0 {
-    //             break;
-    //         }
-    //     }
-    //     Ok(())
-    // }
+    pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
+        let mut val = self.0;
+        loop {
+            let mut byte = (val & 0x7F) as u8;
+            val >>= 7;
+            if val != 0 {
+                byte |= 0x80;
+            }
+            write.write_u8(byte)?;
+            if val == 0 {
+                break;
+            }
+        }
+        Ok(())
+    }
 
     // TODO: Validate that the first byte will not overflow a i32
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
@@ -181,23 +181,23 @@ impl<'de> Deserialize<'de> for VarUInt {
     }
 }
 
-// impl PacketWrite for VarUInt {
-//     fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-//         let mut val = self.0;
-//         loop {
-//             let mut byte = (val & 0x7F) as u8;
-//             val >>= 7;
-//             if val != 0 {
-//                 byte |= 0x80;
-//             }
-//             byte.write(writer)?;
-//             if val == 0 {
-//                 break;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
+impl PacketWrite for VarUInt {
+    fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        let mut val = self.0;
+        loop {
+            let mut byte = (val & 0x7F) as u8;
+            val >>= 7;
+            if val != 0 {
+                byte |= 0x80;
+            }
+            byte.write(writer)?;
+            if val == 0 {
+                break;
+            }
+        }
+        Ok(())
+    }
+}
 
 impl PacketRead for VarUInt {
     fn read<W: Read>(reader: &mut W) -> Result<Self, Error> {
