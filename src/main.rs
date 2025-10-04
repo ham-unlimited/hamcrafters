@@ -1,21 +1,20 @@
 use std::{
     io::{self, Cursor, Read, Write},
     net::{TcpListener, TcpStream},
-    thread,
 };
 
-use chrono::{Duration, Utc};
 use log::info;
 use serde::Deserialize;
 
 use crate::{
     codec::var_int::VarInt,
     coms::{NetworkReadExt, deserialize::Deserializer},
-    serial::PacketWrite,
+    messages::serverbound::handshake::Handshake,
 };
 
 pub mod codec;
 pub mod coms;
+pub mod messages;
 pub mod serial;
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
@@ -44,6 +43,11 @@ struct ClientHandler {
     state: ClientState,
 }
 
+struct ProxyHandler {
+    upstream: TcpStream,
+    buffer: Vec<u8>,
+}
+
 impl ClientHandler {
     fn new(stream: TcpStream) -> Self {
         Self {
@@ -55,22 +59,10 @@ impl ClientHandler {
     fn run(&mut self) {
         let source_ip = self.stream.peer_addr().expect("Failed to read peer addr");
         info!("Receiving connection from {:?}", source_ip);
-        let mut destination =
-            TcpStream::connect("85.24.227.95:25565").expect("Failed to connect to upstream server");
-        destination
-            .set_write_timeout(Some(std::time::Duration::from_secs(30)))
-            .expect("Failed to set write timeout on outgoing client");
-        destination
-            .set_read_timeout(Some(std::time::Duration::from_secs(30)))
-            .expect("Failed to set read timeout");
 
-        info!(
-            "Connected to remote server using sourceport: {}",
-            destination.local_addr().expect("Local addr").port()
-        );
+        let mut proxy_handler = ProxyHandler::new();
 
         let mut buffer = Vec::new();
-        let mut response_buffer = Vec::new();
 
         loop {
             // TODO: Security...
@@ -98,56 +90,15 @@ impl ClientHandler {
 
             let mut cursor = Cursor::new(&buffer[..length]);
 
-            /* Proxy */
-            let mut write_cursor = cursor.clone();
-
-            let mut output_buffer = Vec::new();
-            raw_length
-                .encode(&mut output_buffer)
-                .expect("Failed to write length to output buffer");
-            io::copy(&mut write_cursor, &mut output_buffer)
-                .expect("Failed to write data to output buffer");
-
-            destination
-                .write_all(&output_buffer)
-                .expect("Failed to send message to remote server");
-
-            next_packet_id
-                .encode(&mut destination)
-                .expect("Failed to write extra data");
-
-            destination
-                .flush()
-                .expect("Failed to flush data to upstream");
+            proxy_handler.proxy_request(
+                raw_length,
+                cursor.clone(),
+                next_packet_id,
+                &mut self.stream,
+            );
 
             // TODO: Calculate our own response.
             self.handle_packet(&mut cursor);
-
-            let exit_time = Utc::now() + Duration::seconds(30);
-            let response_length = loop {
-                if let Ok(response_length) = destination.get_var_int() {
-                    break response_length.0 as usize;
-                }
-
-                thread::sleep(std::time::Duration::from_millis(500));
-
-                if Utc::now() > exit_time {
-                    panic!("Timeout waiting for response from upstream");
-                }
-            };
-
-            info!("Got new response of length: {response_length}");
-
-            // Resize buffer if needed
-            if response_buffer.len() < response_length {
-                response_buffer.resize(response_length, 0);
-            }
-
-            destination
-                .read_exact(&mut response_buffer[..response_length])
-                .expect("Failed to read buffer");
-
-            info!("Response bytes: {:?}", &response_buffer[..response_length]);
         }
     }
 
@@ -182,10 +133,88 @@ impl ClientHandler {
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct Handshake {
-    protocol_version: VarInt,
-    server_address: String,
-    server_port: u16,
-    intent: VarInt, // 1 = Status, 2 = Login, 3 = Transfer(?)
+impl ProxyHandler {
+    fn new() -> Self {
+        let upstream =
+            TcpStream::connect("85.24.227.95:25565").expect("Failed to connect to upstream server");
+        upstream
+            .set_write_timeout(Some(std::time::Duration::from_secs(30)))
+            .expect("Failed to set write timeout on outgoing client");
+        upstream
+            .set_read_timeout(Some(std::time::Duration::from_secs(30)))
+            .expect("Failed to set read timeout");
+
+        info!(
+            "Connected to remote server using sourceport: {}",
+            upstream.local_addr().expect("Local addr").port()
+        );
+
+        Self {
+            upstream,
+            buffer: Vec::new(),
+        }
+    }
+
+    fn proxy_request<W: Write>(
+        &mut self,
+        length: VarInt,
+        cursor: Cursor<&[u8]>,
+        next_packet_id: VarInt,
+        response_writer: &mut W,
+    ) {
+        let mut write_cursor = cursor.clone();
+
+        /* Read the data to proxy */
+        let mut output_buffer = Vec::new();
+        length
+            .encode(&mut output_buffer)
+            .expect("Failed to write length to output buffer");
+        io::copy(&mut write_cursor, &mut output_buffer)
+            .expect("Failed to write data to output buffer");
+        next_packet_id
+            .encode(&mut self.upstream)
+            .expect("Failed to write extra data");
+
+        self.upstream
+            .write_all(&output_buffer)
+            .expect("Failed to send message to remote server");
+
+        // next_packet_id
+        //     .encode(&mut self.upstream)
+        //     .expect("Failed to write extra data");
+
+        self.upstream
+            .flush()
+            .expect("Failed to flush data to upstream");
+
+        info!("Sent packet");
+
+        /* Read response from upstream */
+        let response_length_raw = self
+            .upstream
+            .get_var_int()
+            .expect("Failed to read length from upstream");
+        let response_length = response_length_raw.0 as usize;
+
+        info!("Got new response of length: {response_length}");
+
+        // Resize buffer if needed
+        if self.buffer.len() < response_length {
+            self.buffer.resize(response_length, 0);
+        }
+
+        self.upstream
+            .read_exact(&mut self.buffer[..response_length])
+            .expect("Failed to read buffer");
+
+        info!("Response bytes: {:?}", &self.buffer[..response_length]);
+
+        response_length_raw
+            .encode(response_writer)
+            .expect("Failed to encode response length");
+
+        let mut cursor = Cursor::new(&mut self.buffer);
+
+        io::copy(&mut cursor, response_writer).expect("Failed to write response");
+    }
 }
