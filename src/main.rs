@@ -10,6 +10,7 @@ use crate::{
     codec::var_int::VarInt,
     coms::{NetworkReadExt, deserialize::Deserializer},
     messages::serverbound::handshake::Handshake,
+    serial::PacketWrite,
 };
 
 pub mod codec;
@@ -85,7 +86,7 @@ impl ClientHandler {
             // Is either 0 => Status request, or 1 => Ping request.
             let next_packet_id = self
                 .stream
-                .get_var_int()
+                .get_u16_be()
                 .expect("Failed to read next packet ID");
 
             let mut cursor = Cursor::new(&buffer[..length]);
@@ -159,7 +160,7 @@ impl ProxyHandler {
         &mut self,
         length: VarInt,
         cursor: Cursor<&[u8]>,
-        next_packet_id: VarInt,
+        next_packet_id: u16,
         response_writer: &mut W,
     ) {
         let mut write_cursor = cursor.clone();
@@ -171,13 +172,14 @@ impl ProxyHandler {
             .expect("Failed to write length to output buffer");
         io::copy(&mut write_cursor, &mut output_buffer)
             .expect("Failed to write data to output buffer");
-        next_packet_id
-            .encode(&mut self.upstream)
-            .expect("Failed to write extra data");
 
         self.upstream
             .write_all(&output_buffer)
             .expect("Failed to send message to remote server");
+
+        next_packet_id
+            .write_be(&mut self.upstream)
+            .expect("Failed to write extra data");
 
         // next_packet_id
         //     .encode(&mut self.upstream)
