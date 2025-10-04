@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::{
     codec::var_int::VarInt,
     coms::{NetworkReadExt, deserialize::Deserializer},
-    messages::serverbound::handshake::Handshake,
+    messages::{clientbound::status_response::StatusResponse, serverbound::handshake::Handshake},
     serial::PacketWrite,
 };
 
@@ -181,10 +181,6 @@ impl ProxyHandler {
             .write_be(&mut self.upstream)
             .expect("Failed to write extra data");
 
-        // next_packet_id
-        //     .encode(&mut self.upstream)
-        //     .expect("Failed to write extra data");
-
         self.upstream
             .flush()
             .expect("Failed to flush data to upstream");
@@ -209,13 +205,36 @@ impl ProxyHandler {
             .read_exact(&mut self.buffer[..response_length])
             .expect("Failed to read buffer");
 
-        info!("Response bytes: {:?}", &self.buffer[..response_length]);
+        let mut response_cursor = Cursor::new(&mut self.buffer[..response_length]);
+        let packet_id = response_cursor
+            .get_var_int()
+            .expect("Failed to read response packet ID");
+        if packet_id.0 != 0 {
+            panic!("Unexpected packet ID {}, expected 0x0", packet_id.0);
+        }
+
+        let json_string_length = response_cursor
+            .get_var_int()
+            .expect("Failed to read string length");
+
+        // let bs = response_cursor
+        //     .bytes()
+        //     .collect::<io::Result<Vec<u8>>>()
+        //     .expect("Failed to read bytes");
+        // let status_response = String::from_utf8_lossy(bs.as_slice());
+        let status_response: StatusResponse = serde_json::from_reader(&mut response_cursor)
+            .expect("Failed to deserialize status response");
+
+        info!(
+            "Packet ID {} json_string_length: {} status_response: {status_response:?}",
+            packet_id.0, json_string_length.0
+        );
 
         response_length_raw
             .encode(response_writer)
             .expect("Failed to encode response length");
 
-        let mut cursor = Cursor::new(&mut self.buffer);
+        let mut cursor = Cursor::new(&mut self.buffer[..response_length]);
 
         io::copy(&mut cursor, response_writer).expect("Failed to write response");
     }
