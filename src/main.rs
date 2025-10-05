@@ -5,7 +5,7 @@ use std::{
 };
 
 use eyre::Context;
-use log::info;
+use log::{info, warn};
 use serde::Deserialize;
 
 use crate::{
@@ -73,9 +73,19 @@ impl ClientHandler {
 
         // let mut proxy_handler = ProxyHandler::new();
 
+        let mut peek_buf = vec![0];
         let mut buffer = Vec::new();
 
         loop {
+            let peeked = self
+                .stream
+                .peek(&mut peek_buf)
+                .wrap_err("Failed to peek stream")?;
+            if peeked == 0 {
+                // Stream closed.
+                return Ok(());
+            }
+
             // TODO: Security...
             let raw_length = self
                 .stream
@@ -155,12 +165,21 @@ impl ClientHandler {
                     .wrap_err("Failed to write json to buffer")?;
 
                 let packet_length = VarInt(response_buffer.len() as i32);
+                let mut complete_response_buffer =
+                    Vec::with_capacity(packet_length.written_size() + response_buffer.len());
                 packet_length
-                    .encode(&mut self.stream)
-                    .wrap_err("Failed to write packet_length to stream")?;
-                response_buffer
-                    .write(&mut self.stream)
-                    .wrap_err("Failed to write packet content to stream")?;
+                    .encode(&mut complete_response_buffer)
+                    .wrap_err("Failed to encode packet length")?;
+                io::copy(
+                    &mut Cursor::new(response_buffer),
+                    &mut complete_response_buffer,
+                )
+                .wrap_err("Failed to copy response to last buffer")?;
+
+                io::copy(&mut Cursor::new(complete_response_buffer), &mut self.stream)
+                    .wrap_err("Failed to copy final buffer to stream")?;
+
+                self.stream.flush().wrap_err("Failed to flush stream")?;
 
                 info!("Responded to status request");
             }
