@@ -21,12 +21,14 @@ pub mod messages;
 pub mod serial;
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
+const TCP_LISTENING_ADDRESS: &str = "127.0.0.1:22211";
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
     pretty_env_logger::init();
 
-    let listener = TcpListener::bind("127.0.0.1:22211").wrap_err("Failed to setup server")?;
+    info!("Starting server listening on {:?}", TCP_LISTENING_ADDRESS);
+    let listener = TcpListener::bind(TCP_LISTENING_ADDRESS).wrap_err("Failed to setup server")?;
 
     for stream in listener.incoming() {
         let stream = stream.expect("Failed to read stream");
