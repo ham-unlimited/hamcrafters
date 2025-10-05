@@ -1,13 +1,16 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct StatusResponse {
     version: StatusResponseVersion,
     players: Option<StatusResponsePlayers>,
     // Unclear, server seems to give String but spec says otherwise :shrug:
     description: Option<String>,
     favicon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     enforces_secure_chat: Option<bool>,
 }
 
@@ -36,6 +39,7 @@ pub struct StatusResponseVersion {
     protocol: u32,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StatusResponsePlayers {
     max: u32,

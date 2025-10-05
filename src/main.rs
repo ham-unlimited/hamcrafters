@@ -148,6 +148,7 @@ impl ClientHandler {
                 info!("Got status request");
                 let status_response = StatusResponse::new();
 
+                // Build a response
                 let mut response_buffer = Vec::new();
                 let response_id = VarInt::from(0);
                 response_id
@@ -156,10 +157,6 @@ impl ClientHandler {
 
                 let status_response_string = serde_json::to_string(&status_response)
                     .wrap_err("Failed to write status response string")?;
-                let json_length = VarInt::from(status_response_string.len() as i32);
-                json_length
-                    .encode(&mut response_buffer)
-                    .wrap_err("Failed to write json length")?;
                 status_response_string
                     .write(&mut response_buffer)
                     .wrap_err("Failed to write json to buffer")?;
