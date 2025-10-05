@@ -11,7 +11,10 @@ use serde::Deserialize;
 use crate::{
     codec::var_int::VarInt,
     coms::{NetworkReadExt, deserialize::Deserializer},
-    messages::{clientbound::status_response::StatusResponse, serverbound::handshake::Handshake},
+    messages::{
+        clientbound::status_response::StatusResponse,
+        serverbound::{handshake::Handshake, ping_request::PingRequest},
+    },
     serial::PacketWrite,
 };
 
@@ -121,6 +124,10 @@ impl ClientHandler {
         let packet_id = packet_id.0 as usize;
         let mut deserializer = Deserializer::new(cursor);
 
+        info!(
+            "looking to handle {packet_id:02X} for state {:?}",
+            self.state
+        );
         match (&self.state, packet_id) {
             (ClientState::Handshaking, 0) => {
                 let handshake = Handshake::deserialize(&mut deserializer)
@@ -149,6 +156,7 @@ impl ClientHandler {
                 let status_response = StatusResponse::new();
 
                 // Build a response
+                // TODO: There's a lot of unnecessary allocations here because we need to calcualte sizes and then write everything preferably in one packet.
                 let mut response_buffer = Vec::new();
                 let response_id = VarInt::from(0);
                 response_id
@@ -179,6 +187,38 @@ impl ClientHandler {
                 self.stream.flush().wrap_err("Failed to flush stream")?;
 
                 info!("Responded to status request");
+            }
+            (ClientState::Status, 1) => {
+                let ping_request = PingRequest::deserialize(&mut deserializer)
+                    .wrap_err("Failed to deserialize ping request")?;
+
+                info!("Got status ping with request: {ping_request:?}");
+
+                let timestamp_parsed =
+                    chrono::DateTime::from_timestamp_millis(ping_request.timestamp);
+
+                info!("timestamp: {timestamp_parsed:?}");
+
+                let mut response_buffer = Vec::new();
+                let response_length = VarInt(9); // Its always 9, 1 + 8 for packet ID (1) + long (8). TODO: In the future this should be done in a more generic way.
+                response_length
+                    .encode(&mut response_buffer)
+                    .wrap_err("Failed to write response length")?;
+                let packet_id = VarInt(1);
+                packet_id
+                    .encode(&mut response_buffer)
+                    .wrap_err("Failed to write packet id to response buffer")?;
+                ping_request
+                    .timestamp
+                    .write_be(&mut response_buffer)
+                    .wrap_err("Failed to write timestamp to response buffer")?;
+
+                io::copy(&mut Cursor::new(response_buffer), &mut self.stream)
+                    .wrap_err("Failed to write pong response to stream")?;
+
+                self.stream.flush().wrap_err("Failed to flush stream")?;
+
+                info!("Responded to ping request")
             }
             _ => unimplemented!(
                 "Unimplemented packet of ID {packet_id:?} during state {:?}",
