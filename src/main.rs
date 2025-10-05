@@ -1,8 +1,10 @@
 use std::{
     io::{self, Cursor, Read, Write},
     net::{TcpListener, TcpStream},
+    time::Duration,
 };
 
+use eyre::Context;
 use log::info;
 use serde::Deserialize;
 
@@ -20,21 +22,29 @@ pub mod serial;
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
 
-fn main() {
+fn main() -> eyre::Result<()> {
+    color_eyre::install()?;
     pretty_env_logger::init();
 
-    let listener = TcpListener::bind("127.0.0.1:22211").expect("Failed to setup server");
+    let listener = TcpListener::bind("127.0.0.1:22211").wrap_err("Failed to setup server")?;
 
     for stream in listener.incoming() {
         let stream = stream.expect("Failed to read stream");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(20)))
+            .wrap_err("Failed to set read timeout on stream")?;
         let mut handler = ClientHandler::new(stream);
-        handler.run();
+        handler
+            .run()
+            .wrap_err("Error occurred during running of program")?;
     }
+
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
 enum ClientState {
-    New,
+    Handshaking,
     Status,
     Login,
 }
@@ -53,15 +63,15 @@ impl ClientHandler {
     fn new(stream: TcpStream) -> Self {
         Self {
             stream,
-            state: ClientState::New,
+            state: ClientState::Handshaking,
         }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self) -> eyre::Result<()> {
         let source_ip = self.stream.peer_addr().expect("Failed to read peer addr");
         info!("Receiving connection from {:?}", source_ip);
 
-        let mut proxy_handler = ProxyHandler::new();
+        // let mut proxy_handler = ProxyHandler::new();
 
         let mut buffer = Vec::new();
 
@@ -70,7 +80,7 @@ impl ClientHandler {
             let raw_length = self
                 .stream
                 .get_var_int()
-                .expect("Failed to read packet length");
+                .wrap_err("Failed to read packet length")?;
             let length = raw_length.0 as usize;
             info!("Got new package of length: {length}");
 
@@ -83,27 +93,17 @@ impl ClientHandler {
                 .read_exact(&mut buffer[..length])
                 .expect("Failed to read buffer");
 
-            // Is either 0 => Status request, or 1 => Ping request.
-            let next_packet_id = self
-                .stream
-                .get_u16_be()
-                .expect("Failed to read next packet ID");
-
             let mut cursor = Cursor::new(&buffer[..length]);
 
-            proxy_handler.proxy_request(
-                raw_length,
-                cursor.clone(),
-                next_packet_id,
-                &mut self.stream,
-            );
+            // proxy_handler.proxy_request(raw_length, cursor.clone(), &mut self.stream);
 
             // TODO: Calculate our own response.
-            self.handle_packet(&mut cursor);
+            self.handle_packet(&mut cursor)
+                .wrap_err("Failed to handle packet")?;
         }
     }
 
-    fn handle_packet<T>(&mut self, cursor: &mut Cursor<T>)
+    fn handle_packet<T>(&mut self, cursor: &mut Cursor<T>) -> eyre::Result<()>
     where
         T: AsRef<[u8]>,
     {
@@ -112,7 +112,7 @@ impl ClientHandler {
         let mut deserializer = Deserializer::new(cursor);
 
         match (&self.state, packet_id) {
-            (ClientState::New, 0) => {
+            (ClientState::Handshaking, 0) => {
                 let handshake = Handshake::deserialize(&mut deserializer)
                     .expect("Failed to deserialize Deserializer");
 
@@ -125,15 +125,56 @@ impl ClientHandler {
                 }
 
                 log::info!("ID: {:X}, Packet: {:?}", packet_id, handshake);
+
+                self.state = match handshake.intent.0 {
+                    1 => ClientState::Status,
+                    2 => ClientState::Login,
+                    3 => unimplemented!("ClientState::Transfer?"),
+                    s => panic!("Illegal client state requested {s}"),
+                };
+                info!("New server state {:?}", self.state);
+            }
+            (ClientState::Status, 0) => {
+                info!("Got status request");
+                let status_response = StatusResponse::new();
+
+                let mut response_buffer = Vec::new();
+                let response_id = VarInt::from(0);
+                response_id
+                    .encode(&mut response_buffer)
+                    .wrap_err("Failed to write response_id")?;
+
+                let status_response_string = serde_json::to_string(&status_response)
+                    .wrap_err("Failed to write status response string")?;
+                let json_length = VarInt::from(status_response_string.len() as i32);
+                json_length
+                    .encode(&mut response_buffer)
+                    .wrap_err("Failed to write json length")?;
+                status_response_string
+                    .write(&mut response_buffer)
+                    .wrap_err("Failed to write json to buffer")?;
+
+                let packet_length = VarInt(response_buffer.len() as i32);
+                packet_length
+                    .encode(&mut self.stream)
+                    .wrap_err("Failed to write packet_length to stream")?;
+                response_buffer
+                    .write(&mut self.stream)
+                    .wrap_err("Failed to write packet content to stream")?;
+
+                info!("Responded to status request");
             }
             _ => unimplemented!(
                 "Unimplemented packet of ID {packet_id:?} during state {:?}",
                 self.state
             ),
         }
+
+        Ok(())
     }
 }
 
+// TODO: Make async and disconnect serverbound and clientbound packets.
 impl ProxyHandler {
     fn new() -> Self {
         let upstream =
@@ -160,7 +201,6 @@ impl ProxyHandler {
         &mut self,
         length: VarInt,
         cursor: Cursor<&[u8]>,
-        next_packet_id: u16,
         response_writer: &mut W,
     ) {
         let mut write_cursor = cursor.clone();
@@ -176,10 +216,6 @@ impl ProxyHandler {
         self.upstream
             .write_all(&output_buffer)
             .expect("Failed to send message to remote server");
-
-        next_packet_id
-            .write_be(&mut self.upstream)
-            .expect("Failed to write extra data");
 
         self.upstream
             .flush()

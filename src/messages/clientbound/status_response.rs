@@ -11,6 +11,25 @@ pub struct StatusResponse {
     enforces_secure_chat: Option<bool>,
 }
 
+impl StatusResponse {
+    pub fn new() -> Self {
+        Self {
+            version: StatusResponseVersion {
+                name: "1.28.9".to_string(),
+                protocol: 773,
+            },
+            players: Some(StatusResponsePlayers {
+                max: 20,
+                online: 0,
+                sample: None,
+            }),
+            description: Some("TEST Server".to_string()),
+            favicon: None,
+            enforces_secure_chat: None,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StatusResponseVersion {
     name: String,
