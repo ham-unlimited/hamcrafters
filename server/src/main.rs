@@ -5,23 +5,18 @@ use std::{
 };
 
 use eyre::Context;
-use log::{info, warn};
-use serde::Deserialize;
+use log::info;
+use mc_coms::{coms::NetworkReadExt, serial::PacketWrite};
 
-use crate::{
+use mc_coms::{
     codec::var_int::VarInt,
-    coms::{NetworkReadExt, deserialize::Deserializer},
+    coms::deserialize::Deserializer,
     messages::{
         clientbound::status_response::StatusResponse,
         serverbound::{handshake::Handshake, ping_request::PingRequest},
     },
-    serial::PacketWrite,
 };
-
-pub mod codec;
-pub mod coms;
-pub mod messages;
-pub mod serial;
+use serde::Deserialize;
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
 

@@ -28,10 +28,6 @@ pub enum WritingError {
     Message(String),
 }
 
-pub struct Data<'a> {
-    data: &'a [u8],
-}
-
 pub trait NetworkReadExt {
     fn get_i8(&mut self) -> Result<i8, ReadingError>;
     fn get_u8(&mut self) -> Result<u8, ReadingError>;
