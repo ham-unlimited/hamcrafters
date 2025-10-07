@@ -1,14 +1,9 @@
+use mc_packet::McPacket;
+use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
-use crate::messages::McPacket;
-
 #[derive(Debug, Deserialize)]
+#[mc_packet(0x01)]
 pub struct PingRequest {
     pub timestamp: i64,
-}
-
-impl McPacket for PingRequest {
-    fn packet_id() -> &'static usize {
-        &0x01
-    }
 }

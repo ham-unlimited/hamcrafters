@@ -1,9 +1,11 @@
+use mc_packet::McPacket;
+use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
-use crate::messages::McPacket;
 use crate::messages::serverbound::ping_request::PingRequest;
 
 #[derive(Debug, Clone, Deserialize)]
+#[mc_packet(0x01)]
 pub struct PongResponse {
     pub timestamp_ms: i64,
 }
@@ -13,11 +15,5 @@ impl From<PingRequest> for PongResponse {
         Self {
             timestamp_ms: value.timestamp,
         }
-    }
-}
-
-impl McPacket for PongResponse {
-    fn packet_id() -> &'static usize {
-        &0x01
     }
 }

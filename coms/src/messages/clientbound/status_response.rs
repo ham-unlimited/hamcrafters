@@ -1,11 +1,12 @@
+use mc_packet::McPacket;
+use mc_packet_macros::mc_packet;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::messages::McPacket;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+#[mc_packet(0x00)]
 pub struct StatusResponse {
     version: StatusResponseVersion,
     players: Option<StatusResponsePlayers>,
@@ -14,12 +15,6 @@ pub struct StatusResponse {
     favicon: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     enforces_secure_chat: Option<bool>,
-}
-
-impl McPacket for StatusResponse {
-    fn packet_id() -> &'static usize {
-        &0x0
-    }
 }
 
 impl StatusResponse {
