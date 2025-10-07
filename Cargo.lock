@@ -407,7 +407,6 @@ version = "0.1.0"
 name = "mc-packet-macros"
 version = "0.1.0"
 dependencies = [
- "mc-packet",
  "proc-macro2",
  "quote",
  "syn",
