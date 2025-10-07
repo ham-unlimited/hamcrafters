@@ -6,7 +6,6 @@ use std::{
 
 use eyre::Context;
 use log::info;
-use mc_coms::{net::NetworkReadExt, serial::PacketWrite};
 
 use mc_coms::{
     codec::var_int::VarInt,
@@ -14,7 +13,8 @@ use mc_coms::{
         clientbound::status_response::StatusResponse,
         serverbound::{handshake::Handshake, ping_request::PingRequest},
     },
-    net::deserialize::Deserializer,
+    ser::{NetworkReadExt, deserializer::Deserializer},
+    serial::PacketWrite,
 };
 use serde::Deserialize;
 
@@ -188,11 +188,6 @@ impl ClientHandler {
                     .wrap_err("Failed to deserialize ping request")?;
 
                 info!("Got status ping with request: {ping_request:?}");
-
-                let timestamp_parsed =
-                    chrono::DateTime::from_timestamp_millis(ping_request.timestamp);
-
-                info!("timestamp: {timestamp_parsed:?}");
 
                 let mut response_buffer = Vec::new();
                 let response_length = VarInt(9); // Its always 9, 1 + 8 for packet ID (1) + long (8). TODO: In the future this should be done in a more generic way.

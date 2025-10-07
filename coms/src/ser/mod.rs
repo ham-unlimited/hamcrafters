@@ -4,7 +4,8 @@ use thiserror::Error;
 
 use crate::codec::{var_int::VarInt, var_long::VarLong, var_uint::VarUInt, var_ulong::VarULong};
 
-pub mod deserialize;
+pub mod deserializer;
+pub mod serializer;
 
 #[derive(Debug, Error)]
 pub enum ReadingError {

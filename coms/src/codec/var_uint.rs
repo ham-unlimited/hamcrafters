@@ -10,7 +10,7 @@ use serde::{
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
-    net::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    ser::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
     serial::{PacketRead, PacketWrite},
 };
 
