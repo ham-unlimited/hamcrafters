@@ -10,7 +10,7 @@ use serde::{
 };
 
 use crate::{
-    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    net::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
     serial::{PacketRead, PacketWrite},
 };
 

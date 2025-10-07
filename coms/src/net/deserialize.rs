@@ -1,13 +1,13 @@
 use std::{fmt::Display, io::Read};
 
-use crate::coms::NetworkReadExt;
+use crate::net::NetworkReadExt;
 
 use serde::de::{
     self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
     Visitor,
 };
 
-use crate::coms::ReadingError;
+use crate::net::ReadingError;
 
 pub struct Deserializer<R: Read> {
     inner: R,

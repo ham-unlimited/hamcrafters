@@ -6,15 +6,15 @@ use std::{
 
 use eyre::Context;
 use log::info;
-use mc_coms::{coms::NetworkReadExt, serial::PacketWrite};
+use mc_coms::{net::NetworkReadExt, serial::PacketWrite};
 
 use mc_coms::{
     codec::var_int::VarInt,
-    coms::deserialize::Deserializer,
     messages::{
         clientbound::status_response::StatusResponse,
         serverbound::{handshake::Handshake, ping_request::PingRequest},
     },
+    net::deserialize::Deserializer,
 };
 use serde::Deserialize;
 

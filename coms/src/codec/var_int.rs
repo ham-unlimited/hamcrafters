@@ -11,7 +11,7 @@ use serde::{
 use tokio::io::{AsyncRead, AsyncReadExt};
 
 use crate::{
-    coms::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
+    net::{NetworkReadExt, NetworkWriteExt, ReadingError, WritingError},
     serial::PacketRead,
 };
 
