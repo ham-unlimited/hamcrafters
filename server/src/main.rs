@@ -10,8 +10,8 @@ use log::info;
 use mc_coms::{
     codec::var_int::VarInt,
     messages::{
-        clientbound::status_response::StatusResponse,
-        serverbound::{handshake::Handshake, ping_request::PingRequest},
+        clientbound::status::status_response::StatusResponse,
+        serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
     ser::{NetworkReadExt, deserializer::Deserializer},
     serial::PacketWrite,
@@ -69,7 +69,10 @@ impl ClientHandler {
     }
 
     fn run(&mut self) -> eyre::Result<()> {
-        let source_ip = self.stream.peer_addr().expect("Failed to read peer addr");
+        let source_ip = self
+            .stream
+            .peer_addr()
+            .wrap_err("Failed to read peer addr")?;
         info!("Receiving connection from {:?}", source_ip);
 
         // let mut proxy_handler = ProxyHandler::new();

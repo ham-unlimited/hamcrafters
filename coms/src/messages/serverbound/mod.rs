@@ -1,2 +1,2 @@
-pub mod handshake;
-pub mod ping_request;
+pub mod handshaking;
+pub mod status;

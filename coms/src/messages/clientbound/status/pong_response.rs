@@ -2,7 +2,7 @@ use mc_packet::McPacket;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
-use crate::messages::serverbound::ping_request::PingRequest;
+use crate::messages::serverbound::status::ping_request::PingRequest;
 
 #[derive(Debug, Clone, Deserialize)]
 #[mc_packet(0x01)]
