@@ -1,8 +1,4 @@
-use std::{
-    io::{self, Cursor, Read, Write},
-    net::{TcpListener, TcpStream},
-    time::Duration,
-};
+use std::io::{self, Cursor, Read, Write};
 
 use eyre::Context;
 use log::info;
@@ -13,27 +9,35 @@ use mc_coms::{
         clientbound::status::status_response::StatusResponse,
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
+    packet_writer::NetworkWriter,
     ser::{NetworkReadExt, deserializer::Deserializer},
     serial::PacketWrite,
 };
 use serde::Deserialize;
+use tokio::{
+    io::BufWriter,
+    net::{TcpListener, TcpStream},
+};
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
 
-fn main() -> eyre::Result<()> {
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
     dotenvy::dotenv().wrap_err("Failed to read dotenv")?;
     color_eyre::install()?;
     pretty_env_logger::init();
 
     let host = "127.0.0.1:22211";
-    let listener = TcpListener::bind(host).wrap_err("Failed to setup server")?;
-    info!("Listening on {host}");
+    let listener = TcpListener::bind(host)
+        .await
+        .wrap_err("Listening on {host}")?;
 
-    for stream in listener.incoming() {
-        let stream = stream.expect("Failed to read stream");
-        stream
-            .set_read_timeout(Some(Duration::from_secs(20)))
-            .wrap_err("Failed to set read timeout on stream")?;
+    loop {
+        let (stream, addr) = listener
+            .accept()
+            .await
+            .wrap_err("Failed to receive incoming connection")?;
+
         let mut handler = ClientHandler::new(stream);
         handler
             .run()
@@ -53,6 +57,7 @@ enum ClientState {
 struct ClientHandler {
     stream: TcpStream,
     state: ClientState,
+    network_writer: NetworkWriter<TcpStream>,
 }
 
 struct ProxyHandler {
@@ -61,10 +66,16 @@ struct ProxyHandler {
 }
 
 impl ClientHandler {
+    #[must_use]
     fn new(stream: TcpStream) -> Self {
+        let (r, w) = stream.into_split();
+
+        let writer = NetworkWriter::new(BufWriter::new(w));
+
         Self {
             stream,
             state: ClientState::Handshaking,
+            network_writer: writer,
         }
     }
 
@@ -156,36 +167,9 @@ impl ClientHandler {
                 info!("Got status request");
                 let status_response = StatusResponse::new();
 
-                // Build a response
-                // TODO: There's a lot of unnecessary allocations here because we need to calcualte sizes and then write everything preferably in one packet.
-                let mut response_buffer = Vec::new();
-                let response_id = VarInt::from(0);
-                response_id
-                    .encode(&mut response_buffer)
-                    .wrap_err("Failed to write response_id")?;
-
-                let status_response_string = serde_json::to_string(&status_response)
-                    .wrap_err("Failed to write status response string")?;
-                status_response_string
-                    .write(&mut response_buffer)
-                    .wrap_err("Failed to write json to buffer")?;
-
-                let packet_length = VarInt(response_buffer.len() as i32);
-                let mut complete_response_buffer =
-                    Vec::with_capacity(packet_length.written_size() + response_buffer.len());
-                packet_length
-                    .encode(&mut complete_response_buffer)
-                    .wrap_err("Failed to encode packet length")?;
-                io::copy(
-                    &mut Cursor::new(response_buffer),
-                    &mut complete_response_buffer,
-                )
-                .wrap_err("Failed to copy response to last buffer")?;
-
-                io::copy(&mut Cursor::new(complete_response_buffer), &mut self.stream)
-                    .wrap_err("Failed to copy final buffer to stream")?;
-
-                self.stream.flush().wrap_err("Failed to flush stream")?;
+                self.network_writer
+                    .write_packet(status_response)
+                    .wrap_err("Failed to send status response")?;
 
                 info!("Responded to status request");
             }
