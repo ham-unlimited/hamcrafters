@@ -1,10 +1,9 @@
 [workspace]
 resolver = "3"
-members = ["coms", "mc-packet", "mc-packet-macros", "server"]
+members = ["coms", "mc-packet-macros", "server"]
 
 [workspace.dependencies]
 mc-coms = { path = "./coms" }
-mc-packet = { path = "./mc-packet" }
 mc-packet-macros = { path = "./mc-packet-macros" }
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["io-util"] }

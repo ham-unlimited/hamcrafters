@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 serde = { workspace = true }
 tokio = { workspace = true }
-mc-packet = { workspace = true }
 mc-packet-macros = { workspace = true } 
 thiserror = "2.0.17"
 uuid = { version = "1.18.1", features = ["serde"] }

@@ -1,7 +1,9 @@
 use std::io::{Read, Write};
 
-use crate::ser::{ReadingError, WritingError, deserializer, serializer};
-use mc_packet::McPacket;
+use crate::{
+    messages::McPacket,
+    ser::{ReadingError, WritingError, deserializer, serializer},
+};
 use serde::{Serialize, de::DeserializeOwned};
 
 #[forbid(unsafe_code)]
@@ -10,6 +12,8 @@ use serde::{Serialize, de::DeserializeOwned};
 pub mod codec;
 /// Minecraft packet definitions.
 pub mod messages;
+/// Implements support for writing mc_packets correctly.
+pub mod packet_writer;
 /// Network coms for sending / receiving MC Packets.
 pub mod ser;
 /// Reading / writing (a bit unclear tbh).

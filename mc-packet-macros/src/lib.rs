@@ -16,7 +16,7 @@ pub fn mc_packet(args: TokenStream, input: TokenStream) -> TokenStream {
         #input_ast
 
         impl McPacket for #struct_name {
-            const PACKET_ID: usize = #packet_id;
+            const PACKET_ID: i32 = #packet_id;
         }
     };
 
