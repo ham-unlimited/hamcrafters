@@ -1,9 +1,9 @@
-use std::io::{self, Write};
+use std::io;
 
 use log::error;
 use serde::Serialize;
 use thiserror::Error;
-use tokio::io::AsyncWrite;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 use crate::{
     ClientPacket,
@@ -22,11 +22,11 @@ pub enum PacketWriteError {
     IoError(#[from] io::Error),
 }
 
-pub struct NetworkWriter<W: AsyncWrite> {
+pub struct NetworkWriter<W: AsyncWrite + Unpin> {
     writer: W,
 }
 
-impl<W: AsyncWrite> NetworkWriter<W> {
+impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
     pub fn new(writer: W) -> Self {
         Self { writer }
     }
@@ -53,10 +53,10 @@ impl<W: AsyncWrite> NetworkWriter<W> {
 
         let mut len_buf = Vec::new();
         packet_length.encode(&mut len_buf)?;
-        packet_length.encode(&mut self.writer).await?;
-        self.writer.write_all(&packet_buffer)?;
+        packet_length.encode_async(&mut self.writer).await?;
+        self.writer.write_all(&packet_buffer).await?;
 
-        self.writer.flush()?;
+        self.writer.flush().await?;
 
         Ok(())
     }

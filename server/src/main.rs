@@ -1,22 +1,21 @@
-use std::io::{self, Cursor, Read, Write};
-
 use eyre::Context;
 use log::info;
 
 use mc_coms::{
-    codec::var_int::VarInt,
     messages::{
-        clientbound::status::status_response::StatusResponse,
+        clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
+    packet_reader::{NetworkReader, RawPacket},
     packet_writer::NetworkWriter,
-    ser::{NetworkReadExt, deserializer::Deserializer},
-    serial::PacketWrite,
 };
 use serde::Deserialize;
 use tokio::{
-    io::BufWriter,
-    net::{TcpListener, TcpStream},
+    io::{BufReader, BufWriter},
+    net::{
+        TcpListener, TcpStream,
+        tcp::{OwnedReadHalf, OwnedWriteHalf},
+    },
 };
 
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
@@ -32,19 +31,22 @@ async fn main() -> eyre::Result<()> {
         .await
         .wrap_err("Listening on {host}")?;
 
+    info!("Server listening on {host}");
+
     loop {
         let (stream, addr) = listener
             .accept()
             .await
             .wrap_err("Failed to receive incoming connection")?;
 
+        info!("Receiving connection from {:?}", addr);
+
         let mut handler = ClientHandler::new(stream);
         handler
             .run()
+            .await
             .wrap_err("Error occurred during running of program")?;
     }
-
-    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -55,14 +57,9 @@ enum ClientState {
 }
 
 struct ClientHandler {
-    stream: TcpStream,
+    reader: NetworkReader<BufReader<OwnedReadHalf>>,
     state: ClientState,
-    network_writer: NetworkWriter<TcpStream>,
-}
-
-struct ProxyHandler {
-    upstream: TcpStream,
-    buffer: Vec<u8>,
+    network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
 }
 
 impl ClientHandler {
@@ -70,90 +67,55 @@ impl ClientHandler {
     fn new(stream: TcpStream) -> Self {
         let (r, w) = stream.into_split();
 
+        let reader = NetworkReader::new(BufReader::new(r));
         let writer = NetworkWriter::new(BufWriter::new(w));
 
         Self {
-            stream,
+            reader: reader,
             state: ClientState::Handshaking,
             network_writer: writer,
         }
     }
 
-    fn run(&mut self) -> eyre::Result<()> {
-        let source_ip = self
-            .stream
-            .peer_addr()
-            .wrap_err("Failed to read peer addr")?;
-        info!("Receiving connection from {:?}", source_ip);
-
+    async fn run(&mut self) -> eyre::Result<()> {
         // let mut proxy_handler = ProxyHandler::new();
-
-        let mut peek_buf = vec![0];
-        let mut buffer = Vec::new();
-
         loop {
-            let peeked = self
-                .stream
-                .peek(&mut peek_buf)
-                .wrap_err("Failed to peek stream")?;
-            if peeked == 0 {
-                // Stream closed.
-                return Ok(());
+            let packet = self
+                .reader
+                .get_packet()
+                .await
+                .wrap_err("Failed to read packet from reader")?;
+
+            info!("Got new packet: {packet:?}");
+
+            match self.state {
+                ClientState::Handshaking => self
+                    .handle_handshake_packet(packet)
+                    .wrap_err("Failed to handle handshake packet")?,
+                ClientState::Status => self
+                    .handle_status_packet(packet)
+                    .await
+                    .wrap_err("Failed to handle status packet")?,
+                ClientState::Login => todo!("Login not yet supported"),
             }
-
-            // TODO: Security...
-            let raw_length = self
-                .stream
-                .get_var_int()
-                .wrap_err("Failed to read packet length")?;
-            let length = raw_length.0 as usize;
-            info!("Got new package of length: {length}");
-
-            // Resize buffer if needed
-            if buffer.len() < length {
-                buffer.resize(length, 0);
-            }
-
-            self.stream
-                .read_exact(&mut buffer[..length])
-                .expect("Failed to read buffer");
-
-            let mut cursor = Cursor::new(&buffer[..length]);
-
-            // proxy_handler.proxy_request(raw_length, cursor.clone(), &mut self.stream);
-
-            // TODO: Calculate our own response.
-            self.handle_packet(&mut cursor)
-                .wrap_err("Failed to handle packet")?;
         }
     }
 
-    fn handle_packet<T>(&mut self, cursor: &mut Cursor<T>) -> eyre::Result<()>
-    where
-        T: AsRef<[u8]>,
-    {
-        let packet_id: VarInt = cursor.get_var_int().expect("Failed to read packet ID");
-        let packet_id = packet_id.0 as usize;
-        let mut deserializer = Deserializer::new(cursor);
+    fn handle_handshake_packet(&mut self, packet: RawPacket) -> eyre::Result<()> {
+        match packet.id {
+            0x0 => {
+                let handshake = Handshake::deserialize(&mut packet.get_deserializer())
+                    .wrap_err("Failed to deserialize Deserializer")?;
 
-        info!(
-            "looking to handle {packet_id:02X} for state {:?}",
-            self.state
-        );
-        match (&self.state, packet_id) {
-            (ClientState::Handshaking, 0) => {
-                let handshake = Handshake::deserialize(&mut deserializer)
-                    .expect("Failed to deserialize Deserializer");
+                info!("Received handshake request: {handshake:?}");
 
                 if handshake.protocol_version.0 as usize != SUPPORTED_MINECRAFT_PROTOCOL_VERSION {
                     println!(
                         "Unsupported protocol version {}",
                         handshake.protocol_version.0
                     );
-                    panic!("Illegal protocol version");
+                    eyre::bail!("Illegal protocol version");
                 }
-
-                log::info!("ID: {:X}, Packet: {:?}", packet_id, handshake);
 
                 self.state = match handshake.intent.0 {
                     1 => ClientState::Status,
@@ -163,151 +125,42 @@ impl ClientHandler {
                 };
                 info!("New server state {:?}", self.state);
             }
-            (ClientState::Status, 0) => {
+            id => eyre::bail!("Unsupported packet ID for state handshake {id}"),
+        }
+
+        Ok(())
+    }
+
+    async fn handle_status_packet(&mut self, packet: RawPacket) -> eyre::Result<()> {
+        match packet.id {
+            0x0 => {
                 info!("Got status request");
                 let status_response = StatusResponse::new();
 
                 self.network_writer
                     .write_packet(status_response)
+                    .await
                     .wrap_err("Failed to send status response")?;
 
                 info!("Responded to status request");
             }
-            (ClientState::Status, 1) => {
-                let ping_request = PingRequest::deserialize(&mut deserializer)
+            0x1 => {
+                let ping_request = PingRequest::deserialize(&mut packet.get_deserializer())
                     .wrap_err("Failed to deserialize ping request")?;
 
                 info!("Got status ping with request: {ping_request:?}");
 
-                let mut response_buffer = Vec::new();
-                let response_length = VarInt(9); // Its always 9, 1 + 8 for packet ID (1) + long (8). TODO: In the future this should be done in a more generic way.
-                response_length
-                    .encode(&mut response_buffer)
-                    .wrap_err("Failed to write response length")?;
-                let packet_id = VarInt(1);
-                packet_id
-                    .encode(&mut response_buffer)
-                    .wrap_err("Failed to write packet id to response buffer")?;
-                ping_request
-                    .timestamp
-                    .write_be(&mut response_buffer)
-                    .wrap_err("Failed to write timestamp to response buffer")?;
+                let pong_response: PongResponse = ping_request.into();
 
-                io::copy(&mut Cursor::new(response_buffer), &mut self.stream)
-                    .wrap_err("Failed to write pong response to stream")?;
-
-                self.stream.flush().wrap_err("Failed to flush stream")?;
+                self.network_writer
+                    .write_packet(pong_response)
+                    .await
+                    .wrap_err("Failed to write pong_response")?;
 
                 info!("Responded to ping request")
             }
-            _ => unimplemented!(
-                "Unimplemented packet of ID {packet_id:?} during state {:?}",
-                self.state
-            ),
+            id => eyre::bail!("Unsupported packet ID for state handshake {id}"),
         }
-
         Ok(())
-    }
-}
-
-// TODO: Make async and disconnect serverbound and clientbound packets.
-impl ProxyHandler {
-    fn new() -> Self {
-        let upstream =
-            TcpStream::connect("85.24.227.95:25565").expect("Failed to connect to upstream server");
-        upstream
-            .set_write_timeout(Some(std::time::Duration::from_secs(30)))
-            .expect("Failed to set write timeout on outgoing client");
-        upstream
-            .set_read_timeout(Some(std::time::Duration::from_secs(30)))
-            .expect("Failed to set read timeout");
-
-        info!(
-            "Connected to remote server using sourceport: {}",
-            upstream.local_addr().expect("Local addr").port()
-        );
-
-        Self {
-            upstream,
-            buffer: Vec::new(),
-        }
-    }
-
-    fn proxy_request<W: Write>(
-        &mut self,
-        length: VarInt,
-        cursor: Cursor<&[u8]>,
-        response_writer: &mut W,
-    ) {
-        let mut write_cursor = cursor.clone();
-
-        /* Read the data to proxy */
-        let mut output_buffer = Vec::new();
-        length
-            .encode(&mut output_buffer)
-            .expect("Failed to write length to output buffer");
-        io::copy(&mut write_cursor, &mut output_buffer)
-            .expect("Failed to write data to output buffer");
-
-        self.upstream
-            .write_all(&output_buffer)
-            .expect("Failed to send message to remote server");
-
-        self.upstream
-            .flush()
-            .expect("Failed to flush data to upstream");
-
-        info!("Sent packet");
-
-        /* Read response from upstream */
-        let response_length_raw = self
-            .upstream
-            .get_var_int()
-            .expect("Failed to read length from upstream");
-        let response_length = response_length_raw.0 as usize;
-
-        info!("Got new response of length: {response_length}");
-
-        // Resize buffer if needed
-        if self.buffer.len() < response_length {
-            self.buffer.resize(response_length, 0);
-        }
-
-        self.upstream
-            .read_exact(&mut self.buffer[..response_length])
-            .expect("Failed to read buffer");
-
-        let mut response_cursor = Cursor::new(&mut self.buffer[..response_length]);
-        let packet_id = response_cursor
-            .get_var_int()
-            .expect("Failed to read response packet ID");
-        if packet_id.0 != 0 {
-            panic!("Unexpected packet ID {}, expected 0x0", packet_id.0);
-        }
-
-        let json_string_length = response_cursor
-            .get_var_int()
-            .expect("Failed to read string length");
-
-        // let bs = response_cursor
-        //     .bytes()
-        //     .collect::<io::Result<Vec<u8>>>()
-        //     .expect("Failed to read bytes");
-        // let status_response = String::from_utf8_lossy(bs.as_slice());
-        let status_response: StatusResponse = serde_json::from_reader(&mut response_cursor)
-            .expect("Failed to deserialize status response");
-
-        info!(
-            "Packet ID {} json_string_length: {} status_response: {status_response:?}",
-            packet_id.0, json_string_length.0
-        );
-
-        response_length_raw
-            .encode(response_writer)
-            .expect("Failed to encode response length");
-
-        let mut cursor = Cursor::new(&mut self.buffer[..response_length]);
-
-        io::copy(&mut cursor, response_writer).expect("Failed to write response");
     }
 }

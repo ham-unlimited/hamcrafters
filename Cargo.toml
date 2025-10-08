@@ -7,4 +7,5 @@ mc-coms = { path = "./coms" }
 mc-packet-macros = { path = "./mc-packet-macros" }
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
+bytes = "1.10"
 log = "0.4.28"

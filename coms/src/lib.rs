@@ -12,6 +12,8 @@ use serde::{Serialize, de::DeserializeOwned};
 pub mod codec;
 /// Minecraft packet definitions.
 pub mod messages;
+/// Implements support for reading mc_packets correctly.
+pub mod packet_reader;
 /// Implements support for writing mc_packets correctly.
 pub mod packet_writer;
 /// Network coms for sending / receiving MC Packets.
