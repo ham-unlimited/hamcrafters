@@ -21,10 +21,13 @@ use serde::Deserialize;
 const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
 
 fn main() -> eyre::Result<()> {
+    dotenvy::dotenv().wrap_err("Failed to read dotenv")?;
     color_eyre::install()?;
     pretty_env_logger::init();
 
-    let listener = TcpListener::bind("127.0.0.1:22211").wrap_err("Failed to setup server")?;
+    let host = "127.0.0.1:22211";
+    let listener = TcpListener::bind(host).wrap_err("Failed to setup server")?;
+    info!("Listening on {host}");
 
     for stream in listener.incoming() {
         let stream = stream.expect("Failed to read stream");
