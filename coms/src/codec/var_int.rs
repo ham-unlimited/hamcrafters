@@ -15,6 +15,7 @@ use crate::{
     serial::PacketRead,
 };
 
+/// The type underlying a VarInt.
 pub type VarIntType = i32;
 
 /**
@@ -36,6 +37,7 @@ impl VarInt {
         }
     }
 
+    /// Write this VarInt to the provided [write].
     pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
         let mut val = self.0;
         loop {
@@ -49,6 +51,7 @@ impl VarInt {
         Ok(())
     }
 
+    /// Read a VarInt from the provided [read].
     // TODO: Validate that the first byte will not overflow a i32
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
         let mut val = 0;
@@ -64,6 +67,7 @@ impl VarInt {
 }
 
 impl VarInt {
+    /// Read a VarInt from the provided [read] asynchronously.
     pub async fn decode_async(read: &mut (impl AsyncRead + Unpin)) -> Result<Self, ReadingError> {
         let mut val = 0;
         for i in 0..Self::MAX_SIZE.get() {
@@ -82,6 +86,7 @@ impl VarInt {
         Err(ReadingError::TooLarge("VarInt".to_string()))
     }
 
+    /// Write a VarInt to the provided [write] asynchronously.
     pub async fn encode_async(
         &self,
         write: &mut (impl AsyncWrite + Unpin),

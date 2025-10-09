@@ -4,9 +4,11 @@ use serde::Serialize;
 
 use crate::messages::serverbound::status::ping_request::PingRequest;
 
+/// A Minecraft PongResponse.
 #[derive(Debug, Clone, Serialize)]
 #[mc_packet(0x01)]
 pub struct PongResponse {
+    /// The timestamp provided in the [PingRequest] that generated this response.
     pub timestamp_ms: i64,
 }
 

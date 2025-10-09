@@ -2,16 +2,14 @@ use std::io::{self, Cursor};
 
 use crate::{
     codec::var_int::VarInt,
-    ser::{
-        ReadingError,
-        deserializer::{self, Deserializer},
-    },
+    ser::{ReadingError, deserializer::Deserializer},
 };
-use bytes::Bytes;
 use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncReadExt};
 
+/// Error occurred during the reading of a packet.
 #[derive(Error, Debug)]
+#[allow(missing_docs)]
 pub enum PacketReadError {
     #[error("IO Error occurred during writing `{0}`")]
     IoError(#[from] io::Error),
@@ -25,28 +23,34 @@ pub enum PacketReadError {
     PacketDataReadError(String),
 }
 
+/// Reader for reading packets from the network based on the underlying [reader].
 pub struct NetworkReader<R: AsyncRead + Unpin> {
     reader: R,
 }
 
+/// A generic minecraft packet that has yet to be parsed into its specific packet type.
 #[derive(Debug, Clone)]
 pub struct RawPacket {
+    /// The ID of the packet, should be unique per context (server/client-bound) / state.
     pub id: i32,
+    /// The payload of the packet.
     pub data: Vec<u8>,
 }
 
-impl RawPacket {
-    pub fn get_deserializer(self) -> Deserializer<Cursor<Vec<u8>>> {
-        let cursor = Cursor::new(self.data);
+impl From<RawPacket> for Deserializer<Cursor<Vec<u8>>> {
+    fn from(value: RawPacket) -> Self {
+        let cursor = Cursor::new(value.data);
         Deserializer::new(cursor)
     }
 }
 
 impl<R: AsyncRead + Unpin> NetworkReader<R> {
+    /// Create a new [NetworkReader] utilizing the provided [reader] as a basis for incoming packets.
     pub fn new(reader: R) -> Self {
         Self { reader }
     }
 
+    /// Read a single [RawPacket] from the [reader].
     pub async fn get_packet(&mut self) -> Result<RawPacket, PacketReadError> {
         // TODO: handle connection closed?
 

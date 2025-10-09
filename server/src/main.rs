@@ -71,7 +71,7 @@ impl ClientHandler {
         let writer = NetworkWriter::new(BufWriter::new(w));
 
         Self {
-            reader: reader,
+            reader,
             state: ClientState::Handshaking,
             network_writer: writer,
         }
@@ -104,7 +104,7 @@ impl ClientHandler {
     fn handle_handshake_packet(&mut self, packet: RawPacket) -> eyre::Result<()> {
         match packet.id {
             0x0 => {
-                let handshake = Handshake::deserialize(&mut packet.get_deserializer())
+                let handshake = Handshake::deserialize(&mut packet.into())
                     .wrap_err("Failed to deserialize Deserializer")?;
 
                 info!("Received handshake request: {handshake:?}");
@@ -135,7 +135,7 @@ impl ClientHandler {
         match packet.id {
             0x0 => {
                 info!("Got status request");
-                let status_response = StatusResponse::new();
+                let status_response = StatusResponse::default();
 
                 self.network_writer
                     .write_packet(status_response)
@@ -145,7 +145,7 @@ impl ClientHandler {
                 info!("Responded to status request");
             }
             0x1 => {
-                let ping_request = PingRequest::deserialize(&mut packet.get_deserializer())
+                let ping_request = PingRequest::deserialize(&mut packet.into())
                     .wrap_err("Failed to deserialize ping request")?;
 
                 info!("Got status ping with request: {ping_request:?}");

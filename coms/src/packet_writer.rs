@@ -12,6 +12,8 @@ use crate::{
     ser::{NetworkWriteExt, WritingError},
 };
 
+/// Error that occurrs during the writing of a packet.
+#[allow(missing_docs)]
 #[derive(Error, Debug)]
 pub enum PacketWriteError {
     #[error("Writing error `{0}`")]
@@ -22,11 +24,13 @@ pub enum PacketWriteError {
     IoError(#[from] io::Error),
 }
 
+/// A writing for writing packets to the network.
 pub struct NetworkWriter<W: AsyncWrite + Unpin> {
     writer: W,
 }
 
 impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
+    /// Returns a new [NetworkWriter] using the provided [writer] as output.
     pub fn new(writer: W) -> Self {
         Self { writer }
     }

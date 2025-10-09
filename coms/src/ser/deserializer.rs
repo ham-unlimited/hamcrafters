@@ -7,6 +7,7 @@ use serde::de::{
 
 use crate::ser::{NetworkReadExt, ReadingError};
 
+/// A deserializer for Minecraft packets.
 pub struct Deserializer<R: Read> {
     inner: R,
 }
@@ -18,6 +19,7 @@ impl de::Error for ReadingError {
 }
 
 impl<R: Read> Deserializer<R> {
+    /// Returns a new [Deserializer] using the underlying [read] as a source for the payload.
     pub fn new(read: R) -> Self {
         Self { inner: read }
     }

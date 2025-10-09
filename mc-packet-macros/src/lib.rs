@@ -1,9 +1,12 @@
-#[deny(missing_docs)]
-#[forbid(unsafe_code)]
+#![deny(missing_docs)]
+#![forbid(unsafe_code)]
+
+//! Utility macros for the mac-packet crate.
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ItemStruct, LitInt, parse_macro_input};
 
+/// Implements the [McPacket] trait on the provided struct with the [PACKET_ID] set to the provided value.
 #[proc_macro_attribute]
 pub fn mc_packet(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = parse_macro_input!(args as LitInt);

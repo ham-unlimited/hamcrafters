@@ -1,3 +1,8 @@
+#![forbid(unsafe_code)]
+#![deny(missing_docs)]
+
+//! Crate for handling communication of packets between a server and client in Minecraft.
+
 use std::io::{Read, Write};
 
 use crate::{
@@ -5,8 +10,6 @@ use crate::{
     ser::{ReadingError, WritingError, deserializer, serializer},
 };
 use serde::{Serialize, de::DeserializeOwned};
-
-#[forbid(unsafe_code)]
 
 /// Special special minecraft types e.g. VarInt etc.
 pub mod codec;
@@ -21,11 +24,15 @@ pub mod ser;
 /// Reading / writing (a bit unclear tbh).
 pub mod serial;
 
+/// A client-bound packet.
 pub trait ClientPacket: McPacket {
+    /// Write the data of client-bound packet to the provided [write].
     fn write_packet_data(&self, write: impl Write) -> Result<(), WritingError>;
 }
 
+/// A server-bound packet.
 pub trait ServerPacket: McPacket + Sized {
+    /// Read a server-bound packet from the provided [read].
     fn read(read: impl Read) -> Result<Self, ReadingError>;
 }
 
