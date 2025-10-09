@@ -19,7 +19,7 @@ pub enum PacketReadError {
     ConnectionClosed,
     #[error("Failed to parse length `{0}`")]
     LengthParseError(String),
-    #[error("The received packet ID was not invalid")]
+    #[error("The received packet ID was not valid")]
     InvalidPacketId,
     #[error("Failed to read packet data `{0}`")]
     PacketDataReadError(String),
