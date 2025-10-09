@@ -15,6 +15,7 @@ impl PacketRead for bool {
     }
 }
 
+a
 impl PacketRead for i8 {
     fn read<R: Read>(reader: &mut R) -> Result<Self, Error> {
         let mut buf = [0];
