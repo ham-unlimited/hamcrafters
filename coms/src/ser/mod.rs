@@ -4,9 +4,13 @@ use thiserror::Error;
 
 use crate::codec::{var_int::VarInt, var_long::VarLong, var_uint::VarUInt, var_ulong::VarULong};
 
+/// Serde deserializer for Minecraft types.
 pub mod deserializer;
+/// Serde serializer for Minecraft types.
 pub mod serializer;
 
+/// Error occurred during reading of a packet.
+#[allow(missing_docs)]
 #[derive(Debug, Error)]
 pub enum ReadingError {
     #[error("EOF, Tried to read {0} but No bytes left to consume")]
@@ -19,6 +23,8 @@ pub enum ReadingError {
     Message(String),
 }
 
+/// Error occurred during writing of a packet.
+#[allow(missing_docs)]
 #[derive(Debug, Error)]
 pub enum WritingError {
     #[error("IO error: {0}")]
@@ -29,6 +35,8 @@ pub enum WritingError {
     Message(String),
 }
 
+/// Extensions to read certain types for the implementing type.
+#[allow(missing_docs)]
 pub trait NetworkReadExt {
     fn get_i8(&mut self) -> Result<i8, ReadingError>;
     fn get_u8(&mut self) -> Result<u8, ReadingError>;
@@ -222,6 +230,8 @@ impl<R: Read> NetworkReadExt for R {
     }
 }
 
+/// Extensions to write certain types for the implementing type.
+#[allow(missing_docs)]
 pub trait NetworkWriteExt {
     fn write_i8(&mut self, data: i8) -> Result<(), WritingError>;
     fn write_u8(&mut self, data: u8) -> Result<(), WritingError>;

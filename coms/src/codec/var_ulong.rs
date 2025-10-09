@@ -14,6 +14,7 @@ use crate::{
     serial::{PacketRead, PacketWrite},
 };
 
+/// The type underlying a VarULong.
 pub type VarULongType = u64;
 
 /**
@@ -35,6 +36,7 @@ impl VarULong {
         }
     }
 
+    /// Encode this VarULong to the provided [write].
     pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
         let mut x = self.0;
         loop {
@@ -50,6 +52,7 @@ impl VarULong {
         Ok(())
     }
 
+    /// Decode a VarUlong from the provided [read].
     // TODO: Validate that the first byte will not overflow a i64
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
         let mut val = 0;

@@ -3,8 +3,9 @@ use std::{
     num::NonZeroUsize,
 };
 
+use bytes::BufMut;
 use serde::{
-    Deserialize, Deserializer,
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{SeqAccess, Visitor},
 };
 use tokio::io::{AsyncRead, AsyncReadExt};
@@ -14,6 +15,7 @@ use crate::{
     serial::{PacketRead, PacketWrite},
 };
 
+/// The type underlying a VarUInt.
 pub type VarUIntType = u32;
 
 /**
@@ -32,6 +34,7 @@ impl VarUInt {
         (32 - self.0.leading_zeros() as usize).max(1).div_ceil(7)
     }
 
+    /// Encode this VarUInt to the provided [write].
     pub fn encode(&self, write: &mut impl Write) -> Result<(), WritingError> {
         let mut val = self.0;
         loop {
@@ -48,6 +51,7 @@ impl VarUInt {
         Ok(())
     }
 
+    /// Decode a VarUInt from the provided [read].
     // TODO: Validate that the first byte will not overflow a i32
     pub fn decode(read: &mut impl Read) -> Result<Self, ReadingError> {
         let mut val = 0;
@@ -63,6 +67,7 @@ impl VarUInt {
 }
 
 impl VarUInt {
+    /// Decode a VarUInt from the provided [read] asynchronously.
     pub async fn decode_async(read: &mut (impl AsyncRead + Unpin)) -> Result<Self, ReadingError> {
         let mut val = 0;
         for i in 0..Self::MAX_SIZE.get() {
@@ -134,21 +139,21 @@ gen_from!(u64);
 gen_from!(isize);
 gen_from!(usize);
 
-// impl Serialize for VarUInt {
-//     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-//         let mut value = self.0;
-//         let mut buf = Vec::with_capacity(5);
+impl Serialize for VarUInt {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut value = self.0;
+        let mut buf = Vec::with_capacity(5);
 
-//         while value > 0x7F {
-//             buf.put_u8(value as u8 | 0x80);
-//             value >>= 7;
-//         }
+        while value > 0x7F {
+            buf.put_u8(value as u8 | 0x80);
+            value >>= 7;
+        }
 
-//         buf.put_u8(value as u8);
+        buf.put_u8(value as u8);
 
-//         serializer.serialize_bytes(&buf)
-//     }
-// }
+        serializer.serialize_bytes(&buf)
+    }
+}
 
 impl<'de> Deserialize<'de> for VarUInt {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {

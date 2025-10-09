@@ -7,11 +7,14 @@ use serde::{
 
 use crate::ser::{NetworkWriteExt, WritingError};
 
+/// A serializer.
 pub struct Serializer<W: Write> {
+    /// What we will write the serialized packet to.
     pub write: W,
 }
 
 impl<W: Write> Serializer<W> {
+    /// Create a new Serializer that will use the provided [w] as output.
     pub fn new(w: W) -> Self {
         Self { write: w }
     }
@@ -261,8 +264,8 @@ impl<W: Write> ser::Serializer for &mut Serializer<W> {
 
     fn serialize_newtype_struct<T: ?Sized + Serialize>(
         self,
-        name: &'static str,
-        value: &T,
+        _name: &'static str,
+        _value: &T,
     ) -> Result<Self::Ok, Self::Error> {
         todo!("serialize_newtype_struct not implemented")
         // TODO: This is super sketchy... is there a way to do it better? Can we choose what
