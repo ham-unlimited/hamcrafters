@@ -410,6 +410,7 @@ dependencies = [
  "log",
  "mc-packet-macros",
  "serde",
+ "serde_json",
  "serde_with",
  "thiserror",
  "tokio",
@@ -437,7 +438,6 @@ dependencies = [
  "mc-coms",
  "pretty_env_logger",
  "serde",
- "serde_json",
  "tokio",
 ]
 

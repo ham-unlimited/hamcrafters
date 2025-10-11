@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 log = { workspace = true }
 mc-packet-macros = { workspace = true } 

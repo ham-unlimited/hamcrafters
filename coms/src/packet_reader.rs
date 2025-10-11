@@ -37,9 +37,10 @@ pub struct RawPacket {
     pub data: Vec<u8>,
 }
 
-impl From<RawPacket> for Deserializer<Cursor<Vec<u8>>> {
-    fn from(value: RawPacket) -> Self {
-        let cursor = Cursor::new(value.data);
+impl RawPacket {
+    /// Convert this into a deserializer, we're not implementing the From trait to avoid name confusions with other deserializers.
+    pub fn get_deserializer(self) -> Deserializer<Cursor<Vec<u8>>> {
+        let cursor = Cursor::new(self.data);
         Deserializer::new(cursor)
     }
 }
