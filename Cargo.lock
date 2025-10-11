@@ -111,6 +111,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "client-handler"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "mc-coms",
+ "serde",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "color-eyre"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -431,12 +442,14 @@ name = "mc-server-rs"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "client-handler",
  "color-eyre",
  "dotenvy",
  "eyre",
  "log",
  "mc-coms",
  "pretty_env_logger",
+ "proxy",
  "serde",
  "tokio",
 ]
@@ -556,6 +569,10 @@ checksum = "89ae43fd86e4158d6db51ad8e2b80f313af9cc74f5c0e03ccb87de09998732de"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "proxy"
+version = "0.1.0"
 
 [[package]]
 name = "quote"

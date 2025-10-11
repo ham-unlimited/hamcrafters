@@ -1,0 +1,11 @@
+[package]
+name = "client-handler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+mc-coms = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
