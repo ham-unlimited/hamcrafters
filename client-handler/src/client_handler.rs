@@ -5,7 +5,7 @@ use mc_coms::{
         clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
-    packet_reader::{NetworkReader, RawPacket},
+    packet_reader::{NetworkReader, PacketReadError, RawPacket},
     packet_writer::NetworkWriter,
 };
 use serde::Deserialize;
@@ -45,7 +45,11 @@ impl ClientHandler {
     /// Starts listening for & handling packets from the server.
     pub async fn run(&mut self) -> Result<(), ClientError> {
         loop {
-            let packet = self.reader.get_packet().await?;
+            let packet = match self.reader.get_packet().await {
+                Ok(p) => p,
+                Err(PacketReadError::ConnectionClosed) => return Ok(()),
+                Err(err) => return Err(err.into()),
+            };
 
             info!("Got new packet: {packet:?}");
 
@@ -60,7 +64,7 @@ impl ClientHandler {
     fn handle_handshake_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
             0x0 => {
-                let handshake = Handshake::deserialize(&mut packet.into())?;
+                let handshake = Handshake::deserialize(&mut packet.get_deserializer())?;
 
                 info!("Received handshake request: {handshake:?}");
 
@@ -107,7 +111,7 @@ impl ClientHandler {
                 info!("Responded to status request");
             }
             0x1 => {
-                let ping_request = PingRequest::deserialize(&mut packet.into())?;
+                let ping_request = PingRequest::deserialize(&mut packet.get_deserializer())?;
 
                 info!("Got status ping with request: {ping_request:?}");
 
