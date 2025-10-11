@@ -265,9 +265,8 @@ impl<W: Write> ser::Serializer for &mut Serializer<W> {
     fn serialize_newtype_struct<T: ?Sized + Serialize>(
         self,
         _name: &'static str,
-        _value: &T,
+        value: &T,
     ) -> Result<Self::Ok, Self::Error> {
-        todo!("serialize_newtype_struct not implemented")
         // TODO: This is super sketchy... is there a way to do it better? Can we choose what
         // serializer to use on a struct somehow from within the struct?
         // if name == "TextComponent" {
@@ -281,6 +280,7 @@ impl<W: Write> ser::Serializer for &mut Serializer<W> {
         // } else {
         //     value.serialize(self)
         // }
+        value.serialize(self)
     }
 
     fn serialize_newtype_variant<T: ?Sized + Serialize>(

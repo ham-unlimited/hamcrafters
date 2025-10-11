@@ -6,7 +6,7 @@ use mc_coms::{
         clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
-    packet_reader::{NetworkReader, RawPacket},
+    packet_reader::{NetworkReader, PacketReadError, RawPacket},
     packet_writer::NetworkWriter,
 };
 use serde::Deserialize;
@@ -80,11 +80,11 @@ impl ClientHandler {
     async fn run(&mut self) -> eyre::Result<()> {
         // let mut proxy_handler = ProxyHandler::new();
         loop {
-            let packet = self
-                .reader
-                .get_packet()
-                .await
-                .wrap_err("Failed to read packet from reader")?;
+            let packet = match self.reader.get_packet().await {
+                Ok(s) => s,
+                Err(PacketReadError::ConnectionClosed) => return Ok(()),
+                Err(e) => Err(e).wrap_err("Failed to read packet")?,
+            };
 
             info!("Got new packet: {packet:?}");
 
@@ -104,8 +104,8 @@ impl ClientHandler {
     fn handle_handshake_packet(&mut self, packet: RawPacket) -> eyre::Result<()> {
         match packet.id {
             0x0 => {
-                let handshake = Handshake::deserialize(&mut packet.into())
-                    .wrap_err("Failed to deserialize Deserializer")?;
+                let handshake = Handshake::deserialize(&mut packet.get_deserializer())
+                    .wrap_err("Failed to deserialize handshake")?;
 
                 info!("Received handshake request: {handshake:?}");
 
@@ -145,7 +145,7 @@ impl ClientHandler {
                 info!("Responded to status request");
             }
             0x1 => {
-                let ping_request = PingRequest::deserialize(&mut packet.into())
+                let ping_request = PingRequest::deserialize(&mut packet.get_deserializer())
                     .wrap_err("Failed to deserialize ping request")?;
 
                 info!("Got status ping with request: {ping_request:?}");

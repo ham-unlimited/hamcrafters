@@ -55,8 +55,6 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
             PacketWriteError::PacketLengthTooLarge
         })?;
 
-        let mut len_buf = Vec::new();
-        packet_length.encode(&mut len_buf)?;
         packet_length.encode_async(&mut self.writer).await?;
         self.writer.write_all(&packet_buffer).await?;
 
