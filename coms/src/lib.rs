@@ -24,6 +24,10 @@ pub mod ser;
 /// Reading / writing (a bit unclear tbh).
 pub mod serial;
 
+/// Which minecraft protocol version this implementation supports.
+/// 773 ~= 1.28.9, 1.28.10 etc
+pub const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
+
 /// A client-bound packet.
 pub trait ClientPacket: McPacket {
     /// Write the data of client-bound packet to the provided [write].
