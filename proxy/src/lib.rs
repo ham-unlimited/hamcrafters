@@ -60,7 +60,6 @@ pub struct ProxyHandler {
 
 impl ProxyHandler {
     /// Creates a [ProxyHandler] from the provided [stream].
-    #[must_use]
     pub async fn new(stream: TcpStream) -> Result<Self, ProxyError> {
         let (client_reader, client_writer) = stream.into_split();
         let client_reader = NetworkReader::new(BufReader::new(client_reader));
@@ -69,7 +68,7 @@ impl ProxyHandler {
         let proxy_addr = "minecraft.vidarmagnusson.com:25565";
         let out_stream = TcpStream::connect(proxy_addr)
             .await
-            .map_err(|err| ProxyError::FailedStartingServerComs(err))?;
+            .map_err(ProxyError::FailedStartingServerComs)?;
         info!("Connection setup to {proxy_addr}");
 
         let (server_reader, server_writer) = out_stream.into_split();
