@@ -1,4 +1,4 @@
-use mc_packet::McPacket;
+use crate::McPacket;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 use uuid::Uuid;
