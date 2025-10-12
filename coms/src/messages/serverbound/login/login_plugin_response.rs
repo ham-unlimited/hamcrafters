@@ -2,7 +2,7 @@ use mc_packet::McPacket;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
-use crate::codec::prefixed_array::PrefixedArray;
+use crate::codec::{prefixed_optional::PrefixedOptional, var_int::VarInt};
 
 #[derive(Debug, Deserialize)]
 #[mc_packet(0x02)]
