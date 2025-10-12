@@ -2,22 +2,7 @@ use client_handler::client_handler::ClientHandler;
 use eyre::Context;
 use log::info;
 
-use mc_coms::{
-    messages::{
-        clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
-        serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
-    },
-    packet_reader::{NetworkReader, PacketReadError, RawPacket},
-    packet_writer::NetworkWriter,
-};
-use serde::Deserialize;
-use tokio::{
-    io::{BufReader, BufWriter},
-    net::{
-        TcpListener, TcpStream,
-        tcp::{OwnedReadHalf, OwnedWriteHalf},
-    },
-};
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
