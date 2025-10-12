@@ -1,8 +1,7 @@
 use mc_packet::McPacket;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
-
-use crate::codec::var_int::VarInt;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 #[mc_packet(0x0)]
