@@ -11,6 +11,8 @@ use crate::{
 };
 use serde::{Serialize, de::DeserializeOwned};
 
+/// The current state of a client<->server communications.
+pub mod client_state;
 /// Special special minecraft types e.g. VarInt etc.
 pub mod codec;
 /// Minecraft packet definitions.

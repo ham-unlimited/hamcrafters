@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// A response to a Minecraft status request.
-#[serde_with::skip_serializing_none]
-#[derive(Serialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[mc_packet(0x00)]
 pub struct StatusResponse(JsonString<ServerStatus, 27512>);
 
 /// Server status inner response.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+#[serde_with::skip_serializing_none]
 pub struct ServerStatus {
     version: ServerStatusVersion,
     players: Option<ServerStatusPlayers>,

@@ -1,11 +1,11 @@
 use crate::McPacket;
 use mc_packet_macros::mc_packet;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::messages::serverbound::status::ping_request::PingRequest;
 
 /// A Minecraft PongResponse.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[mc_packet(0x01)]
 pub struct PongResponse {
     /// The timestamp provided in the [PingRequest] that generated this response.
