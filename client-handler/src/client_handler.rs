@@ -1,6 +1,7 @@
 use log::info;
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
+    client_state::ClientState,
     messages::{
         clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
@@ -17,7 +18,7 @@ use tokio::{
     },
 };
 
-use crate::{client_error::ClientError, client_state::ClientState};
+use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
 pub struct ClientHandler {

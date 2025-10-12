@@ -3,9 +3,6 @@
 
 //! Crate for handling communications with a Minecraft client.
 
-/// Data & logic for the states the client-server communication can be in.
-pub mod client_state;
-
 /// Handler for client communications.
 pub mod client_handler;
 

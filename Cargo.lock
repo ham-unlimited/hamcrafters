@@ -573,6 +573,13 @@ dependencies = [
 [[package]]
 name = "proxy"
 version = "0.1.0"
+dependencies = [
+ "log",
+ "mc-coms",
+ "serde",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "quote"

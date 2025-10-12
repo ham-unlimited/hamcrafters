@@ -1,10 +1,9 @@
 use mc_coms::{
+    client_state::ClientState,
     packet_reader::PacketReadError,
     packet_writer::PacketWriteError,
     ser::{ReadingError, WritingError},
 };
-
-use crate::client_state::ClientState;
 
 /// An error that occurrs whilst communicating with a client.
 #[allow(missing_docs)]

@@ -1,8 +1,8 @@
-use client_handler::client_handler::ClientHandler;
 use eyre::Context;
 use log::info;
 
 use tokio::net::TcpListener;
+use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -18,6 +18,7 @@ async fn main() -> eyre::Result<()> {
     info!("Server listening on {host}");
 
     loop {
+        // TODO: Spin up a new thread for each client.
         let (stream, addr) = listener
             .accept()
             .await
@@ -25,10 +26,37 @@ async fn main() -> eyre::Result<()> {
 
         info!("Receiving connection from {:?}", addr);
 
-        let mut handler = ClientHandler::new(stream);
-        handler
-            .run()
+        handle_connection(stream)
             .await
-            .wrap_err("Error occurred during running of program")?;
+            .wrap_err("Failed to handle connection")?;
     }
+}
+
+#[cfg(feature = "proxy")]
+async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
+    use proxy::ProxyHandler;
+
+    info!("Setting up proxy...");
+    let mut handler = ProxyHandler::new(stream)
+        .await
+        .wrap_err("Failed to setup proxy")?;
+    handler
+        .run()
+        .await
+        .wrap_err("Error occurred during running of proxy")?;
+
+    Ok(())
+}
+
+#[cfg(not(feature = "proxy"))]
+async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
+    use client_handler::client_handler::ClientHandler;
+
+    let mut handler = ClientHandler::new(stream);
+    handler
+        .run()
+        .await
+        .wrap_err("Error occurred during running of program")?;
+
+    Ok(())
 }

@@ -137,6 +137,7 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
         _name: &'static str,
         _visitor: V,
     ) -> Result<V::Value, Self::Error> {
+        log::info!("Deserialize newtype struct, name {_name}");
         unimplemented!()
     }
 
