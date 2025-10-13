@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server"]
+members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt"]
 
 [workspace.dependencies]
 mc-coms = { path = "./coms" }
