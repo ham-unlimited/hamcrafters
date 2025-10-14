@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NbtTagType {
     TagEnd,
     TagByte(NbtByte),

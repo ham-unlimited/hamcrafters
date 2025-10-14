@@ -5,8 +5,9 @@ use serde::de::{
 
 use crate::{
     nbt_named_tag::NbtNamedTag,
-    serde::{Error, Result},
+    ser::{Error, Result},
     tag_type::NbtTagType,
+    unsupported,
 };
 
 pub struct Deserializer {
@@ -25,12 +26,6 @@ impl<'de> IntoDeserializer<'de, Error> for NbtTagType {
     fn into_deserializer(self) -> Self::Deserializer {
         Deserializer::from_nbt_tag(self)
     }
-}
-
-macro_rules! unsupported {
-    ($ty:literal) => {
-        return Err(Error::Unsupported($ty))
-    };
 }
 
 struct CompoundVisitor {
@@ -149,28 +144,28 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         visitor.visit_i64(i.0)
     }
 
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u8<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("u8")
     }
 
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u16<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("u16")
     }
 
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u32<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("u32")
     }
 
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_u64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -199,14 +194,14 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         visitor.visit_f64(f.0)
     }
 
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_char<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("char")
     }
 
-    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_str<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -224,14 +219,14 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         visitor.visit_string(s.0)
     }
 
-    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_bytes<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("bytes")
     }
 
-    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -246,21 +241,21 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         visitor.visit_some(self)
     }
 
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("unit")
     }
 
-    fn deserialize_unit_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_unit_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
         unsupported!("unit_struct")
     }
 
-    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -288,7 +283,7 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         }
     }
 
-    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value>
+    fn deserialize_tuple<V>(self, _len: usize, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
@@ -297,9 +292,9 @@ impl<'de> de::Deserializer<'de> for Deserializer {
 
     fn deserialize_tuple_struct<V>(
         self,
-        name: &'static str,
-        len: usize,
-        visitor: V,
+        _name: &'static str,
+        _len: usize,
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
@@ -332,9 +327,9 @@ impl<'de> de::Deserializer<'de> for Deserializer {
 
     fn deserialize_enum<V>(
         self,
-        name: &'static str,
-        variants: &'static [&'static str],
-        visitor: V,
+        _name: &'static str,
+        _variants: &'static [&'static str],
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
@@ -342,7 +337,7 @@ impl<'de> de::Deserializer<'de> for Deserializer {
         unsupported!("enum")
     }
 
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {

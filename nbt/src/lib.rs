@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::File,
     io::{self, Cursor, Read},
     num::TryFromIntError,
@@ -7,15 +6,15 @@ use std::{
     string::FromUtf8Error,
 };
 
-use ::serde::Deserialize;
 use flate2::read::GzDecoder;
+use serde::{Deserialize, Serialize};
 
 use crate::nbt_named_tag::NbtNamedTag;
 
 pub mod error;
 pub mod nbt_named_tag;
 pub mod nbt_types;
-pub mod serde;
+pub mod ser;
 pub mod tag_type;
 
 #[derive(Debug, thiserror::Error)]
@@ -50,7 +49,11 @@ pub fn read_nbt_file(path: &Path) -> NbtResult<Option<NbtNamedTag>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::serde::deserializer::Deserializer;
+    use crate::{
+        nbt_types::{NbtCompound, NbtString},
+        ser::{deserializer::Deserializer, serializer::to_nbt_tag_type},
+        tag_type::NbtTagType,
+    };
 
     use super::*;
 
@@ -68,17 +71,60 @@ mod tests {
         };
 
         let deserializer = Deserializer::from_nbt_tag(nbt.payload);
-        let dat = MinecraftLevelDat::deserialize(deserializer).expect("Faield to deserialize");
+        MinecraftLevelDat::deserialize(deserializer).expect("Failed to deserialize");
+    }
+
+    #[test]
+    fn test_serialize_deserialize_level_dat() {
+        let Some(nbt) = read_nbt_file(Path::new("../test-data/level.dat"))
+            .expect("Expect to read file correctly")
+        else {
+            panic!("Failed");
+        };
+
+        let deserializer = Deserializer::from_nbt_tag(nbt.payload.clone());
+        let dat = MinecraftLevelDat::deserialize(deserializer).expect("Failed to deserialize");
+        let serialized = to_nbt_tag_type(&dat).expect("Failed to serialize level.dat");
+        assert_eq!(serialized, Some(nbt.payload))
+    }
+
+    #[test]
+    fn test_maps() {
+        let input = NbtTagType::TagCompound(NbtCompound(vec![NbtNamedTag {
+            name: NbtString("my_map".to_string()),
+            payload: NbtTagType::TagCompound(NbtCompound(vec![
+                NbtNamedTag {
+                    name: NbtString("first_value".to_string()),
+                    payload: NbtTagType::TagString(NbtString("first_value_value".to_string())),
+                },
+                NbtNamedTag {
+                    name: NbtString("second_value".to_string()),
+                    payload: NbtTagType::TagString(NbtString("second_value_value".to_string())),
+                },
+            ])),
+        }]));
+
+        let deserializer = ser::deserializer::Deserializer::from_nbt_tag(input.clone());
+        let pepe = Pepe::deserialize(deserializer).expect("Failed to deserialize map");
+        println!("PEPE: {pepe:?}");
+
+        let serialized = to_nbt_tag_type(&pepe).expect("Failed to serialize map");
+        assert_eq!(serialized, Some(input));
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
+struct Pepe {
+    my_map: std::collections::HashMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize)]
 struct MinecraftLevelDat {
     #[serde(rename = "Data")]
     data: MinecraftLevelDatData,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct MinecraftLevelDatData {
     #[serde(rename = "allowCommands")]
     allow_commands: Option<bool>,
@@ -154,7 +200,7 @@ struct MinecraftLevelDatData {
 //     color: String,
 // }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct DataPacks {
     #[serde(rename = "Enabled")]
     enabled: Vec<String>,
@@ -163,7 +209,7 @@ struct DataPacks {
 }
 
 // TODO: Whilst these supposedly have types, (bools / i32s), they are all stored as Strings... :zzz:
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GameRules {
     global_sound_events: String,
@@ -227,7 +273,7 @@ struct GameRules {
     max_command_fork_count: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct WorldGenSettings {
     bonus_chest: bool,
     seed: i64,
@@ -235,7 +281,7 @@ struct WorldGenSettings {
     dimensions: Dimensions,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Dimensions {
     #[serde(rename = "minecraft:overworld")]
     overworld: Dimension,
@@ -245,13 +291,13 @@ struct Dimensions {
     end: Dimension,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Dimension {/* TODO */}
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Player {/* TODO */}
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Spawn {
     pos: Vec<i32>, // TODO: Position type, is represented as a size 3 vector of ints.
     pitch: f32,

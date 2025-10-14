@@ -10,7 +10,7 @@ pub trait NbtType {
     fn to_tag_type(self) -> NbtTagType;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtByte(pub i8);
 
 impl NbtType for NbtByte {
@@ -25,7 +25,7 @@ impl NbtType for NbtByte {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtShort(pub i16);
 
 impl NbtType for NbtShort {
@@ -40,7 +40,7 @@ impl NbtType for NbtShort {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtInt(pub i32);
 
 impl NbtType for NbtInt {
@@ -55,7 +55,7 @@ impl NbtType for NbtInt {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtLong(pub i64);
 
 impl NbtType for NbtLong {
@@ -70,7 +70,7 @@ impl NbtType for NbtLong {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtFloat(pub f32);
 
 impl NbtType for NbtFloat {
@@ -85,7 +85,7 @@ impl NbtType for NbtFloat {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtDouble(pub f64);
 
 impl NbtType for NbtDouble {
@@ -99,7 +99,7 @@ impl NbtType for NbtDouble {
         NbtTagType::TagDouble(self)
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtByteArray(pub Vec<NbtByte>);
 
 impl NbtType for NbtByteArray {
@@ -119,7 +119,7 @@ impl NbtType for NbtByteArray {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtString(pub String);
 
 impl NbtType for NbtString {
@@ -140,7 +140,7 @@ impl NbtType for NbtString {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtList(pub Vec<NbtTagType>);
 
 impl NbtType for NbtList {
@@ -172,7 +172,7 @@ impl NbtType for NbtList {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtCompound(pub Vec<NbtNamedTag>);
 
 impl NbtType for NbtCompound {
@@ -197,7 +197,7 @@ impl NbtType for NbtCompound {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtIntArray(pub Vec<NbtInt>);
 
 impl NbtType for NbtIntArray {
@@ -218,7 +218,7 @@ impl NbtType for NbtIntArray {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtLongArray(pub Vec<NbtLong>);
 
 impl NbtType for NbtLongArray {
