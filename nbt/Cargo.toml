@@ -7,4 +7,5 @@ edition = "2024"
 thiserror = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
 flate2 = "1.1.4"
