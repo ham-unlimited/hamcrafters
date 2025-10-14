@@ -6,7 +6,7 @@ use crate::{
     tag_type::NbtTagType,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NbtNamedTag {
     pub name: NbtString,
     pub payload: NbtTagType,
