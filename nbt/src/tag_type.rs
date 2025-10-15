@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::Read;
 
 use crate::{
     NbtResult,
@@ -68,17 +68,16 @@ impl NbtTagType {
         }
     }
 
-    /// Write this tag to the provided [w].
     // TODO: Finish
-    fn write<W: Write>(&self, w: &mut W) -> NbtResult<()> {
-        let b: u8 = self.get_tag_id();
-        w.write(&[b])?;
+    // fn write<W: Write>(&self, w: &mut W) -> NbtResult<()> {
+    //     let b: u8 = self.get_tag_id();
+    //     w.write(&[b])?;
 
-        match self {
-            NbtTagType::TagEnd => {}
-            t => todo!("Writing of nbttype {t:?} not implemented"),
-        }
+    //     match self {
+    //         NbtTagType::TagEnd => {}
+    //         t => todo!("Writing of nbttype {t:?} not implemented"),
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }

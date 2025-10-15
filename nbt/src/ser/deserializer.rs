@@ -22,7 +22,7 @@ impl Deserializer {
     }
 }
 
-impl<'de> IntoDeserializer<'de, Error> for NbtTagType {
+impl IntoDeserializer<'_, Error> for NbtTagType {
     type Deserializer = Deserializer;
 
     fn into_deserializer(self) -> Self::Deserializer {
