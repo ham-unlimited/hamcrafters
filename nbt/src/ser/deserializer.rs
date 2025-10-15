@@ -10,11 +10,13 @@ use crate::{
     unsupported,
 };
 
+/// Deserializer for the NbtTagType handling convertions between it and types implementing [serde::Deserialize].
 pub struct Deserializer {
     input: NbtTagType,
 }
 
 impl Deserializer {
+    /// Creates a new [Deserializer] from the privded [input].
     pub fn from_nbt_tag(input: NbtTagType) -> Self {
         Self { input }
     }

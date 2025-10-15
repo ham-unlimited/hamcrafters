@@ -1,5 +1,7 @@
 use std::{io, num::TryFromIntError, string::FromUtf8Error};
 
+/// An error that can occur in the crate.
+#[allow(missing_docs)]
 #[derive(Debug, thiserror::Error)]
 pub enum NbtError {
     #[error("IO Error `{0}`")]
@@ -14,4 +16,5 @@ pub enum NbtError {
     InvalidLength(#[from] TryFromIntError),
 }
 
+/// Result type for the crate.
 pub type NbtResult<T> = Result<T, NbtError>;
