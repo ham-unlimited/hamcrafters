@@ -15,6 +15,7 @@ pub mod error;
 pub mod nbt_named_tag;
 pub mod nbt_types;
 pub mod ser;
+pub mod snbt;
 pub mod tag_type;
 
 #[derive(Debug, thiserror::Error)]
