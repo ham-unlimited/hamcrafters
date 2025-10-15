@@ -27,7 +27,7 @@ pub fn to_nbt_tag_type<T: Serialize>(value: &T) -> Result<Option<NbtTagType>> {
     Ok(v)
 }
 
-impl<'a> ser::Serializer for &'a mut Serializer {
+impl ser::Serializer for &mut Serializer {
     type Ok = Option<NbtTagType>;
 
     type Error = Error;
@@ -105,7 +105,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         T: ?Sized + Serialize,
     {
         let mut serializer = Serializer::new();
-        Ok(value.serialize(&mut serializer)?)
+        value.serialize(&mut serializer)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok> {
