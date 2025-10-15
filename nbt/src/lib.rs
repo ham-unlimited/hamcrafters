@@ -109,10 +109,12 @@ mod tests {
 
         let deserializer = ser::deserializer::Deserializer::from_nbt_tag(input.clone());
         let pepe = Pepe::deserialize(deserializer).expect("Failed to deserialize map");
-        println!("PEPE: {pepe:?}");
-
         let serialized = to_nbt_tag_type(&pepe).expect("Failed to serialize map");
-        assert_eq!(serialized, Some(input));
+
+        let input: Snbt = (&input).into();
+        let serialized: Snbt = (&serialized.unwrap()).into();
+
+        assert_eq!(serialized, input);
     }
 
     #[derive(Serialize, Deserialize, Debug)]
