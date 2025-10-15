@@ -1,11 +1,30 @@
+use std::fmt::Display;
+
 use crate::{nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
 
+#[derive(PartialEq, Debug, Clone)]
 pub struct Snbt(String);
 
 impl From<&NbtNamedTag> for Snbt {
     fn from(value: &NbtNamedTag) -> Self {
+        let name = &value.name.0;
+
+        let name = if name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || "_-+.".contains(c))
+        {
+            name
+        } else {
+            &format!(r#""{name}""#)
+        };
         let inner: Snbt = (&value.payload).into();
-        Self(format!("{{{}:{}}}", value.name.0, inner.0))
+        Self(format!("{}:{}", name, inner.0))
+    }
+}
+
+impl Display for Snbt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
     }
 }
 
@@ -28,7 +47,7 @@ impl From<&NbtTagType> for Snbt {
                 let content = content.join(",");
                 Self(format!("[B;{}]", content))
             }
-            NbtTagType::TagString(nbt_string) => Self(format!("\"{}\"", nbt_string.0)),
+            NbtTagType::TagString(nbt_string) => Self(format!(r#""{}""#, nbt_string.0)),
             NbtTagType::TagList(nbt_list) => {
                 let list = nbt_list
                     .0
