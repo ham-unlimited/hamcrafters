@@ -59,12 +59,13 @@ mod tests {
 
     #[test]
     fn test_parse_level_dat() {
-        read_nbt_file(Path::new("../test-data/level.dat")).expect("Expect to read file correctly");
+        read_nbt_file(Path::new("../test-data/test-world/level.dat"))
+            .expect("Expect to read file correctly");
     }
 
     #[test]
     fn test_deserialize_level_dat() {
-        let Some(nbt) = read_nbt_file(Path::new("../test-data/level.dat"))
+        let Some(nbt) = read_nbt_file(Path::new("../test-data/test-world/level.dat"))
             .expect("Expect to read file correctly")
         else {
             panic!("Failed");
