@@ -53,6 +53,7 @@ mod tests {
     use crate::{
         nbt_types::{NbtCompound, NbtString},
         ser::{deserializer::Deserializer, serializer::to_nbt_tag_type},
+        snbt::Snbt,
         tag_type::NbtTagType,
     };
 
@@ -86,7 +87,15 @@ mod tests {
         let deserializer = Deserializer::from_nbt_tag(nbt.payload.clone());
         let dat = MinecraftLevelDat::deserialize(deserializer).expect("Failed to deserialize");
         let serialized = to_nbt_tag_type(&dat).expect("Failed to serialize level.dat");
-        assert_eq!(serialized, Some(nbt.payload))
+
+        let ser: Snbt = (&serialized.unwrap()).into();
+        let og: Snbt = (&nbt.payload).into();
+
+        println!("\n\nser:\n{}", ser);
+        println!("\n\nog:\n{}", og);
+
+        assert_eq!(true, false)
+        // assert_eq!(serialized, Some(nbt.payload))
     }
 
     #[test]
