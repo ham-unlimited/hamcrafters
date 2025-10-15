@@ -1,15 +1,19 @@
 use std::io::Read;
 
-use crate::{NbtError, NbtResult, nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
+use crate::{NbtResult, error::NbtError, nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
 
+/// Trait for all NbtTypes.
 pub trait NbtType {
+    /// Parse the implementing type from the provided [Read].
     fn read<R: Read>(r: &mut R) -> NbtResult<Self>
     where
         Self: Sized;
 
-    fn to_tag_type(self) -> NbtTagType;
+    // /// Return this type wrapped in NbtTagType.
+    // fn to_tag_type(self) -> NbtTagType;
 }
 
+/// A signle byte in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtByte(pub i8);
 
@@ -20,11 +24,12 @@ impl NbtType for NbtByte {
         Ok(Self(i8::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagByte(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagByte(self)
+    // }
 }
 
+/// Two-byte integer in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtShort(pub i16);
 
@@ -35,11 +40,12 @@ impl NbtType for NbtShort {
         Ok(Self(i16::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagShort(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagShort(self)
+    // }
 }
 
+/// A four-byte integer in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtInt(pub i32);
 
@@ -50,11 +56,12 @@ impl NbtType for NbtInt {
         Ok(Self(i32::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagInt(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagInt(self)
+    // }
 }
 
+/// A eight-byte integer in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtLong(pub i64);
 
@@ -65,11 +72,12 @@ impl NbtType for NbtLong {
         Ok(Self(i64::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagLong(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagLong(self)
+    // }
 }
 
+/// A four-byte floating point number in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtFloat(pub f32);
 
@@ -80,11 +88,12 @@ impl NbtType for NbtFloat {
         Ok(Self(f32::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagFloat(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagFloat(self)
+    // }
 }
 
+/// A eight-byte floating point number in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtDouble(pub f64);
 
@@ -95,10 +104,12 @@ impl NbtType for NbtDouble {
         Ok(Self(f64::from_be_bytes(bs)))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagDouble(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagDouble(self)
+    // }
 }
+
+/// An array containing NbtBytes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtByteArray(pub Vec<NbtByte>);
 
@@ -114,11 +125,12 @@ impl NbtType for NbtByteArray {
         Ok(Self(buffer))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagByteArray(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagByteArray(self)
+    // }
 }
 
+/// A string in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtString(pub String);
 
@@ -135,11 +147,12 @@ impl NbtType for NbtString {
         Ok(Self(s))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagString(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagString(self)
+    // }
 }
 
+/// A list containing any NBT type, expected to only contain a single nbt type.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtList(pub Vec<NbtTagType>);
 
@@ -167,11 +180,12 @@ impl NbtType for NbtList {
         Ok(Self(buffer))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagList(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagList(self)
+    // }
 }
 
+/// An NBT compound, basically a JSON map in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtCompound(pub Vec<NbtNamedTag>);
 
@@ -192,11 +206,12 @@ impl NbtType for NbtCompound {
         Ok(Self(buffer))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagCompound(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagCompound(self)
+    // }
 }
 
+/// An array of integers in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtIntArray(pub Vec<NbtInt>);
 
@@ -213,11 +228,12 @@ impl NbtType for NbtIntArray {
         Ok(Self(buffer))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagIntArray(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagIntArray(self)
+    // }
 }
 
+/// An array of longs in NBT format.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtLongArray(pub Vec<NbtLong>);
 
@@ -234,7 +250,7 @@ impl NbtType for NbtLongArray {
         Ok(Self(buffer))
     }
 
-    fn to_tag_type(self) -> NbtTagType {
-        NbtTagType::TagLongArray(self)
-    }
+    // fn to_tag_type(self) -> NbtTagType {
+    //     NbtTagType::TagLongArray(self)
+    // }
 }

@@ -9,6 +9,7 @@ use crate::ser::{Error, Result};
 use crate::tag_type::NbtTagType;
 use crate::unsupported;
 
+/// Serializer for the NbtTagType converting from any type implementing serde::Serialize into it.
 pub struct Serializer {}
 
 impl Serializer {
@@ -17,6 +18,8 @@ impl Serializer {
     }
 }
 
+/// Convert the provided value into an NbtTagType.
+/// Returns None if there are no tags or the only tag is None.
 pub fn to_nbt_tag_type<T: Serialize>(value: &T) -> Result<Option<NbtTagType>> {
     let mut serializer = Serializer::new();
     let v = value.serialize(&mut serializer)?;
@@ -188,6 +191,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 }
 
+/// Sequence serializer for NbtTagType handling serialization of list types.
 pub struct SeqSerializer {
     values: Vec<NbtTagType>,
 }
@@ -212,6 +216,7 @@ impl SerializeSeq for SeqSerializer {
     }
 }
 
+/// Compound serializer for handling map types.
 pub struct CompoundMapSerializer {
     new_name: Option<NbtString>,
     tags: Vec<NbtNamedTag>,
@@ -275,6 +280,7 @@ impl SerializeMap for CompoundMapSerializer {
     }
 }
 
+/// Compound serializer for struct types.
 pub struct CompoundStructSerializer {
     fields: Vec<NbtNamedTag>,
 }

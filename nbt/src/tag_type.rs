@@ -1,13 +1,16 @@
 use std::io::{Read, Write};
 
 use crate::{
-    NbtError, NbtResult,
+    NbtResult,
+    error::NbtError,
     nbt_types::{
         NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtFloat, NbtInt, NbtIntArray, NbtList,
         NbtLong, NbtLongArray, NbtShort, NbtString, NbtType,
     },
 };
 
+/// The different tags in NBT with the contained payloads.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum NbtTagType {
     TagEnd,
@@ -26,6 +29,7 @@ pub enum NbtTagType {
 }
 
 impl NbtTagType {
+    /// Parse an NbtTagType from the provided [r].
     pub fn read<R: Read>(tag_id: u8, r: &mut R) -> NbtResult<Self> {
         Ok(match tag_id {
             0 => NbtTagType::TagEnd,
@@ -45,6 +49,7 @@ impl NbtTagType {
         })
     }
 
+    /// Get the ID for this tag.
     pub fn get_tag_id(&self) -> u8 {
         match self {
             NbtTagType::TagEnd => 0,
@@ -63,6 +68,8 @@ impl NbtTagType {
         }
     }
 
+    /// Write this tag to the provided [w].
+    // TODO: Finish
     fn write<W: Write>(&self, w: &mut W) -> NbtResult<()> {
         let b: u8 = self.get_tag_id();
         w.write(&[b])?;

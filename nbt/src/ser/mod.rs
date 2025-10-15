@@ -1,8 +1,11 @@
 use std::fmt::Display;
 
+/// Deserializer implementation.
 pub mod deserializer;
+/// Serializer implementation.
 pub mod serializer;
 
+/// Macro for handling cases that are not supported by the deserializer & serializer.
 #[macro_export]
 macro_rules! unsupported {
     ($ty:literal) => {
@@ -10,6 +13,8 @@ macro_rules! unsupported {
     };
 }
 
+/// Serialization errors for the Deserializer & Serializer.
+#[allow(missing_docs)]
 #[derive(Debug)]
 pub enum Error {
     SerdeCustom(String),

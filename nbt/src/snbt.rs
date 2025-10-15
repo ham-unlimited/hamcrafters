@@ -2,6 +2,9 @@ use std::fmt::Display;
 
 use crate::{nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
 
+// TODO: Implement From<&Snbt> for NbtNamedTag
+
+/// SNBT type (Stringified Named Binary Tag)
 #[derive(PartialEq, Debug, Clone)]
 pub struct Snbt(String);
 

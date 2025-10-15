@@ -6,9 +6,12 @@ use crate::{
     tag_type::NbtTagType,
 };
 
+/// An NbtNamedTag, basically NBTs answers to a field in a JSON map.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtNamedTag {
+    /// Name of this tag.
     pub name: NbtString,
+    /// Content of this tag.
     pub payload: NbtTagType,
 }
 
