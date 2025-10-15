@@ -44,6 +44,8 @@ pub fn read_nbt_file(path: &Path) -> NbtResult<Option<NbtNamedTag>> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use serde::{Deserialize, Serialize};
 
     use crate::{
@@ -114,12 +116,12 @@ mod tests {
         let input: Snbt = (&input).into();
         let serialized: Snbt = (&serialized.unwrap()).into();
 
-        assert_eq!(serialized, input);
+        assert_eq!(serialized.to_string(), input.to_string());
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     struct Pepe {
-        my_map: std::collections::HashMap<String, String>,
+        my_map: BTreeMap<String, String>,
     }
 
     #[derive(Serialize, Deserialize)]
