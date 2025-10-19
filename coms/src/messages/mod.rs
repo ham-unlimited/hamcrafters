@@ -1,8 +1,12 @@
 use crate::codec::var_int::VarInt;
 
+// TODO: remove when implemented all parsers
+
 /// Client-bound packages.
+#[allow(unused)]
 pub mod clientbound;
 /// Server-bound packages.
+#[allow(unused)]
 pub mod serverbound;
 
 /// A Minecraft packet
