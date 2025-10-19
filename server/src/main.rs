@@ -35,10 +35,9 @@ async fn main() -> eyre::Result<()> {
 #[cfg(feature = "proxy")]
 async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
     use proxy::ProxyHandler;
-            
-    let proxy_addr = std::env::var("PROXY_TARGET")
-                                .unwrap_or("minecraft.vidarmagnusson.com:25565".to_owned());
 
+    let proxy_addr =
+        std::env::var("PROXY_TARGET").unwrap_or("minecraft.vidarmagnusson.com:25565".to_owned());
 
     info!("Setting up proxy...");
     let mut handler = ProxyHandler::new(stream, &proxy_addr)
