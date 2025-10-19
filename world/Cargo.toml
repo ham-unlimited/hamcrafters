@@ -6,3 +6,10 @@ edition = "2024"
 [dependencies]
 serde = { workspace = true }
 nbt = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+flate2 = { workspace = true }
+
+[dev-dependencies]
+pretty_env_logger = { workspace = true }
+fastanvil = "0.32.0"
