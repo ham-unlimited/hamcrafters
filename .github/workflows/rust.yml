@@ -9,10 +9,18 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+
+
 jobs:
+  strategy:
+    matrix:
+      handling-strategy: [client-handler, proxy]
+  
   build:
 
     runs-on: ubuntu-latest
+    env:
+      HANDLING_STRATEGY: matrix.handling-strategy
 
     steps:
     - uses: actions/checkout@v4
