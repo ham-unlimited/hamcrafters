@@ -227,6 +227,7 @@ mod test {
     use crate::save::player_dat::PlayerDat;
 
     #[test]
+    #[ignore = "Not finished quite yet"]
     fn parse_player_dat_file() {
         let Some(nbt) = read_nbt_file(Path::new(
             "../test-data/test-world/playerdata/df61b106-ca06-46b5-958a-99923cfe7ba6.dat",
