@@ -5,6 +5,7 @@ use serde::de::SeqAccess;
 use serde::de::Visitor;
 use std::fmt;
 
+/// The present variable decides if the data is present
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PrefixedOptional<T> {
     present: bool,

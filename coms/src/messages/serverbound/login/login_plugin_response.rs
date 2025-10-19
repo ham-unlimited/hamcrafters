@@ -4,9 +4,10 @@ use serde::Deserialize;
 
 use crate::codec::{prefixed_optional::PrefixedOptional, var_int::VarInt};
 
+/// Login plugin response message
 #[derive(Debug, Deserialize)]
 #[mc_packet(0x02)]
 pub struct LoginPluginResponse {
-    pub message_id: VarInt,
-    pub data: PrefixedOptional<Vec<u8>>,
+    message_id: VarInt,
+    data: PrefixedOptional<Vec<u8>>,
 }
