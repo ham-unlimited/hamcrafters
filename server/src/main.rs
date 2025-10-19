@@ -1,3 +1,5 @@
+mod encryption;
+
 use eyre::Context;
 use log::info;
 
@@ -52,7 +54,12 @@ async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
 async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    let mut handler = ClientHandler::new(stream);
+    use crate::encryption::encryption::McEncryptionKeys;
+
+    let keys = McEncryptionKeys::new();
+
+    let mut handler = ClientHandler::new(stream, keys.der_encode_pub_key(), keys.priv_key);
+
     handler
         .run()
         .await

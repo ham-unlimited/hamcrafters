@@ -1,8 +1,7 @@
 use serde::de::{self, Deserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
-use std::io::Cursor;
-use std::{fmt, io};
+use std::fmt;
 
 use crate::codec::var_int::VarInt;
 
