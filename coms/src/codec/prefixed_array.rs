@@ -4,6 +4,7 @@ use std::fmt;
 
 use crate::codec::var_int::VarInt;
 
+/// An array with a varint length to be parsed
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PrefixedArray<T> {
     length: VarInt,

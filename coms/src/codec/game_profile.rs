@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional};
 
+/// A minecraft game profile
 #[derive(Debug, Deserialize)]
 pub struct GameProfile {
     uuid: Uuid,
@@ -11,7 +12,7 @@ pub struct GameProfile {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Property {
+struct Property {
     name: String,
     value: String,
     signature: PrefixedOptional<String>,
