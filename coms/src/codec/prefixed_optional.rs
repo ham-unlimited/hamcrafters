@@ -7,10 +7,7 @@ use std::fmt;
 
 /// The present variable decides if the data is present
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct PrefixedOptional<T> {
-    present: bool,
-    data: Vec<T>,
-}
+pub struct PrefixedOptional<T>(Option<T>);
 
 impl<'de, T> Deserialize<'de> for PrefixedOptional<T>
 where
@@ -45,25 +42,25 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
-                let mut items = Vec::with_capacity(1);
+                let Some(v) = seq.next_element()? else {
+                    if !present {
+                        return Ok(PrefixedOptional(None));
+                    }
 
-                if present {
-                    let item: T = seq
-                        .next_element()?
-                        .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                    items.push(item);
-                }
-
-                if let Some(_) = seq.next_element::<de::IgnoredAny>()? {
                     return Err(de::Error::custom(
-                        "extra elements after the prefixed optional",
+                        "Expected element, should exist because of prefix boolean but data not present",
+                    ));
+                };
+
+                if !present {
+                    return Err(de::Error::custom(
+                        "Did not expect an element, but found one.",
                     ));
                 }
 
-                Ok(PrefixedOptional {
-                    present,
-                    data: items,
-                })
+                // TODO: maybe check for extra elements lol :3
+
+                Ok(PrefixedOptional(v))
             }
         }
 

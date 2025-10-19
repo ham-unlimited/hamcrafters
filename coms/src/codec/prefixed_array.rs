@@ -6,10 +6,7 @@ use crate::codec::var_int::VarInt;
 
 /// An array with a varint length to be parsed
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct PrefixedArray<T> {
-    length: VarInt,
-    data: Vec<T>,
-}
+pub struct PrefixedArray<T>(Vec<T>);
 
 impl<'de, T> Deserialize<'de> for PrefixedArray<T>
 where
@@ -57,10 +54,7 @@ where
                     return Err(de::Error::custom("extra elements after the prefixed array"));
                 }
 
-                Ok(PrefixedArray {
-                    length,
-                    data: items,
-                })
+                Ok(PrefixedArray(items))
             }
         }
 
