@@ -1,5 +1,3 @@
-mod encryption;
-
 use eyre::Context;
 use log::info;
 
@@ -60,7 +58,7 @@ async fn handle_connection(stream: TcpStream, _key_store: &KeyStore) -> eyre::Re
 async fn handle_connection(stream: TcpStream, key_store: &KeyStore) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    let mut handler = ClientHandler::new(stream, key_store);
+    let mut handler = ClientHandler::new(stream, &key_store);
 
     handler
         .run()

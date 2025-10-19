@@ -6,6 +6,7 @@ use mc_coms::{
     client_state::ClientState,
     codec::prefixed_array::PrefixedArray,
     key_store::KeyStore,
+    key_store::KeyStore,
     messages::{
         McPacketRead,
         clientbound::{
@@ -59,10 +60,10 @@ impl<'key> ClientHandler<'key> {
         let writer = NetworkWriter::new(BufWriter::new(w));
 
         Self {
-            state: ClientState::Handshaking,
             key_store,
-            network_reader: reader,
+            state: ClientState::Handshaking,
             network_writer: writer,
+            network_reader: reader,
         }
     }
 
@@ -165,8 +166,6 @@ impl<'key> ClientHandler<'key> {
                 info!("Creating encryption request");
                 let encryption_request =
                     EncryptionRequest::new(self.key_store.get_der_public_key());
-
-                info!("Encryption request: {encryption_request:02x?}");
 
                 info!("Verify token: {:02x?}", encryption_request.verify_token);
 
