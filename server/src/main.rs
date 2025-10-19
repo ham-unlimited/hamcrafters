@@ -1,3 +1,5 @@
+mod encryption;
+
 use eyre::Context;
 use log::info;
 
