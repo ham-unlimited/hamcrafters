@@ -1,5 +1,3 @@
-// A minecraft game profile
-pub mod game_profile;
 /// A JsonString.
 pub mod json_string;
 /// Implementation of the minecraft Prefixed Array

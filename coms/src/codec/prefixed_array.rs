@@ -50,7 +50,7 @@ where
                     items.push(item);
                 }
 
-                if let Some(_) = seq.next_element::<de::IgnoredAny>()? {
+                if seq.next_element::<de::IgnoredAny>()?.is_some() {
                     return Err(de::Error::custom("extra elements after the prefixed array"));
                 }
 
