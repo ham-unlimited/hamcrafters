@@ -16,10 +16,10 @@ pub struct EncryptionRequest {
 
 impl EncryptionRequest {
     /// Creates a new [EncryptionRequest] with some defaults
-    pub fn new(public_key: &String) -> Self {
+    pub fn new(der_public_key: Vec<u8>) -> Self {
         Self {
             server_id: "Hamcrafters".to_string(),
-            public_key: PrefixedArray::from(public_key.bytes().collect::<Vec<u8>>()),
+            public_key: PrefixedArray::from(der_public_key),
             // For security
             verify_token: PrefixedArray::from(vec![b'h', b'a', b'm']),
             should_authenticate: false,

@@ -15,6 +15,8 @@ use serde::{Serialize, de::DeserializeOwned};
 pub mod client_state;
 /// Special special minecraft types e.g. VarInt etc.
 pub mod codec;
+/// Keystore for storing encryption keys.
+pub mod key_store;
 /// Minecraft packet definitions.
 pub mod messages;
 /// Implements support for reading mc_packets correctly.

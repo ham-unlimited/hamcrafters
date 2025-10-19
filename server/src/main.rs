@@ -1,8 +1,7 @@
-mod encryption;
-
 use eyre::Context;
 use log::info;
 
+use mc_coms::key_store::KeyStore;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 
@@ -19,6 +18,8 @@ async fn main() -> eyre::Result<()> {
 
     info!("Server listening on {host}");
 
+    let key_store = KeyStore::new().wrap_err("Failed to setup keystore")?;
+
     loop {
         // TODO: Spin up a new thread for each client.
         let (stream, addr) = listener
@@ -28,12 +29,13 @@ async fn main() -> eyre::Result<()> {
 
         info!("Receiving connection from {:?}", addr);
 
-        handle_connection(stream)
+        handle_connection(stream, &key_store)
             .await
             .wrap_err("Failed to handle connection")?;
     }
 }
 
+// TODO: Keystore
 #[cfg(feature = "proxy")]
 async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
     use proxy::ProxyHandler;
@@ -51,14 +53,10 @@ async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
 }
 
 #[cfg(not(feature = "proxy"))]
-async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
+async fn handle_connection(stream: TcpStream, key_store: &KeyStore) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    use crate::encryption::encryption::McEncryptionKeys;
-
-    let keys = McEncryptionKeys::new();
-
-    let mut handler = ClientHandler::new(stream, keys.der_encode_pub_key(), keys.priv_key);
+    let mut handler = ClientHandler::new(stream, &key_store);
 
     handler
         .run()

@@ -2,16 +2,13 @@ use log::info;
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
     client_state::ClientState,
+    key_store::KeyStore,
     messages::{
         clientbound::{
             login::encryption_request::EncryptionRequest,
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
-        serverbound::{
-            handshaking::handshake::Handshake,
-            login::{encryption_response, login_start::LoginStart},
-            status::ping_request::PingRequest,
-        },
+        serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
     packet_reader::{NetworkReader, PacketReadError, RawPacket},
     packet_writer::NetworkWriter,
@@ -28,18 +25,17 @@ use tokio::{
 use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
-pub struct ClientHandler {
+pub struct ClientHandler<'key> {
     reader: NetworkReader<BufReader<OwnedReadHalf>>,
     state: ClientState,
-    public_key: String,
-    private_key: String,
+    key_store: &'key KeyStore,
     network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
 }
 
-impl ClientHandler {
+impl<'key> ClientHandler<'key> {
     /// Creates a new [ClientHandler] from the provided [TcpStream].
     #[must_use]
-    pub fn new(stream: TcpStream, public_key: String, private_key: String) -> Self {
+    pub fn new(stream: TcpStream, key_store: &'key KeyStore) -> Self {
         let (r, w) = stream.into_split();
 
         let reader = NetworkReader::new(BufReader::new(r));
@@ -48,8 +44,7 @@ impl ClientHandler {
         Self {
             reader,
             state: ClientState::Handshaking,
-            public_key,
-            private_key,
+            key_store,
             network_writer: writer,
         }
     }
@@ -149,7 +144,8 @@ impl ClientHandler {
                 info!("Got login start request");
 
                 info!("Creating encryption request");
-                let encryption_request = EncryptionRequest::new(&self.public_key);
+                let encryption_request =
+                    EncryptionRequest::new(self.key_store.get_der_public_key());
 
                 info!("Encryption request: {encryption_request:?}");
 
