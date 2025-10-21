@@ -1,8 +1,8 @@
-use std::io::Read;
+use std::{collections::HashMap, io::Read};
 
-use log::info;
-use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer};
-use serde::Deserialize;
+use log::{info, warn};
+use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer, snbt::Snbt};
+use serde::{Deserialize, de::Visitor};
 
 use crate::save::anvil::{AnvilError, AnvilResult};
 
@@ -22,7 +22,7 @@ pub struct ChunkData {
     status: String,
     #[serde(rename = "LastUpdate")]
     last_update: i64,
-    // TODO: sections
+    sections: Vec<Section>,
     // TODO: block_entities
     // TODO: CarvingMasks? (Maybe not a thing anymore).
     // TODO: Heightmaps
@@ -42,9 +42,124 @@ impl ChunkData {
             return Err(AnvilError::InvalidChunkFormat);
         };
 
+        // info!("TAG: {}", Snbt::from(&tag).to_string());
+
         let deserializer = Deserializer::from_nbt_tag(tag.payload);
         let cd = ChunkData::deserialize(deserializer)?;
-        info!("Chunk data: {cd:?}");
+        // info!("Chunk data: {cd:?}");
         todo!()
+    }
+}
+
+/// A section in Minecraft (also known as a sub-chunk), it covers the same 16x16 area but only 16 blocks tall so a total of 4096 blocks.
+/// This means that there are (currently) 24 subchunks per chunk in the overworld of Minecraft.
+#[derive(Deserialize, Debug)]
+pub struct Section {
+    #[serde(rename = "Y")]
+    y: i8,
+    block_states: BlockStates,
+    // biomes: Biomes, // TODO
+    #[serde(rename = "BlockLight")]
+    block_light: Option<Vec<i8>>, // Always 2048 long but serde only supports arrays of length 0..=32 (each half-byte is one block). Omitted if there is no light that reaches this section.
+    #[serde(rename = "SkyLight")]
+    sky_light: Option<Vec<i8>>, // Always 2048 long but serde only supports arrays of length 0..=32 (each half-byte is one block). If omitted we should look at the section right above it.
+}
+
+#[derive(Deserialize, Debug)]
+pub struct BlockStates {
+    palette: Vec<Block>, // Up to 4096 long in vanilla, longer are supported for other servers / clients.
+    data: Option<Vec<i64>>, // Always 4096 long, points to indices in the palette vector for each block of the section. Omitted if a single blockstate is used for the entire section.
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct Block {
+    name: String, // Block resource location.
+    properties: Option<PropertiesList>,
+}
+
+#[derive(Debug)]
+struct PropertiesList(Vec<BlockState>);
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+
+// TODO: Convert the strings to their actual values.
+pub enum BlockState {
+    Age(i8),
+    Axis(BlockAxis),
+    Down(String),        // Is really a boolean
+    Level(String),       // Is really an integer
+    Up(String),          // Is really a boolean
+    West(String),        // Is really a boolean
+    North(String),       // Is really a boolean
+    South(String),       // Is really a boolean
+    East(String),        // Is really a boolean
+    Lit(String),         // Is really a boolean
+    Waterlogged(String), // Is really a boolean
+    Half(Half),
+    Unsupported { name: String, value: String },
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum BlockAxis {
+    X,
+    Y,
+    Z,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum Half {
+    Upper,
+    Lower,
+}
+
+struct PropertiesVisitor;
+
+impl<'de> Visitor<'de> for PropertiesVisitor {
+    type Value = PropertiesList;
+
+    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("Expected block state object")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::MapAccess<'de>,
+    {
+        let mut properties = vec![];
+
+        // CRIMES AHOY! But hey, how would you solve it?
+        while let Some((field, value)) = map.next_entry::<String, serde_json::Value>()? {
+            let f = field.clone();
+            let v = value.clone();
+            let json_obj = serde_json::json!({ f: v });
+            let block_state: BlockState = match serde_json::from_value(json_obj) {
+                Ok(b) => b,
+                Err(err) => {
+                    warn!(
+                        "Failed to deserialize property: {{{field}: {value}}} converting to 'Unsupported', err: {err}"
+                    );
+                    BlockState::Unsupported {
+                        name: field,
+                        value: value.to_string(),
+                    }
+                }
+            };
+            properties.push(block_state);
+        }
+
+        Ok(PropertiesList(properties))
+    }
+}
+
+impl<'de> Deserialize<'de> for PropertiesList {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(PropertiesVisitor)
     }
 }
