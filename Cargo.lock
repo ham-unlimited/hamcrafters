@@ -1918,6 +1918,7 @@ dependencies = [
  "nbt",
  "pretty_env_logger",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 
