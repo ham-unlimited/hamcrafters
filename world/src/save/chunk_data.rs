@@ -1,7 +1,7 @@
-use std::{collections::HashMap, io::Read};
+use std::io::Read;
 
-use log::{info, warn};
-use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer, snbt::Snbt};
+use log::warn;
+use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer};
 use serde::{Deserialize, de::Visitor};
 
 use crate::save::anvil::{AnvilError, AnvilResult};
@@ -42,12 +42,12 @@ impl ChunkData {
             return Err(AnvilError::InvalidChunkFormat);
         };
 
-        // info!("TAG: {}", Snbt::from(&tag).to_string());
-
         let deserializer = Deserializer::from_nbt_tag(tag.payload);
         let cd = ChunkData::deserialize(deserializer)?;
-        // info!("Chunk data: {cd:?}");
-        todo!()
+
+        // TODO: Finish parsing the data.
+
+        Ok(cd)
     }
 }
 
@@ -58,7 +58,7 @@ pub struct Section {
     #[serde(rename = "Y")]
     y: i8,
     block_states: BlockStates,
-    // biomes: Biomes, // TODO
+    biomes: Biomes, // TODO
     #[serde(rename = "BlockLight")]
     block_light: Option<Vec<i8>>, // Always 2048 long but serde only supports arrays of length 0..=32 (each half-byte is one block). Omitted if there is no light that reaches this section.
     #[serde(rename = "SkyLight")]
@@ -83,22 +83,116 @@ struct PropertiesList(Vec<BlockState>);
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
-
-// TODO: Convert the strings to their actual values.
 pub enum BlockState {
-    Age(i8),
+    Age(SI32),
     Axis(BlockAxis),
-    Down(String),        // Is really a boolean
-    Level(String),       // Is really an integer
-    Up(String),          // Is really a boolean
-    West(String),        // Is really a boolean
-    North(String),       // Is really a boolean
-    South(String),       // Is really a boolean
-    East(String),        // Is really a boolean
-    Lit(String),         // Is really a boolean
-    Waterlogged(String), // Is really a boolean
+    Down(SBool),
+    Level(SI32),
+    Up(SBool),
+    West(SBool),
+    North(SBool),
+    South(SBool),
+    East(SBool),
+    Lit(SBool),
+    Waterlogged(SBool),
     Half(Half),
+    Persistent(SBool),
+    Distance(SI32),
+    SegmentAmount(SI32),
+    Facing(Direction),
+    Snowy(SBool),
+    Drag(SBool),
+    Type(BlockType),
+    Shape(BlockShape),
+    Open(SBool),
+    Powered(SBool),
     Unsupported { name: String, value: String },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum BlockType {
+    Normal,
+    Sticky,
+    Left,
+    Right,
+    Single,
+    Bottom,
+    Double,
+    Top,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BlockShape {
+    /* Rail */
+    AscendingEast,
+    AscendingNorth,
+    AscendingSouth,
+    AscendingWest,
+    EastWest,
+    NorthSouth,
+    NorthEast,
+    NorthWest,
+    SouthEast,
+    SouthWest,
+    /* Stairs */
+    InnerLeft,
+    InnerRight,
+    OuterLeft,
+    OuterRight,
+    Straight,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Direction {
+    Down,
+    East,
+    North,
+    South,
+    West,
+    Up,
+}
+
+/// A stringified boolean, because sometimes minecraft decides to put booleans in Strings :facepalm:
+#[derive(Debug)]
+pub struct SBool(bool);
+
+impl<'de> Deserialize<'de> for SBool {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        match s.to_lowercase().as_str() {
+            "true" => Ok(SBool(true)),
+            "false" => Ok(SBool(false)),
+            o => Err(serde::de::Error::custom(format!(
+                "Invalid value for SBool '{o}'"
+            ))),
+        }
+    }
+}
+
+/// A stringified i32, because sometimes minecraft decides to put integers in Strings :facepalm:
+#[derive(Debug)]
+pub struct SI32(i32);
+
+impl<'de> Deserialize<'de> for SI32 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let i = s.parse::<i32>().map_err(|err| {
+            serde::de::Error::custom(format!(
+                "Failed to parse SI32 from value '{s}' due to err: {err}"
+            ))
+        })?;
+
+        Ok(SI32(i))
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -114,6 +208,8 @@ pub enum BlockAxis {
 pub enum Half {
     Upper,
     Lower,
+    Bottom,
+    Top,
 }
 
 struct PropertiesVisitor;
@@ -162,4 +258,10 @@ impl<'de> Deserialize<'de> for PropertiesList {
     {
         deserializer.deserialize_map(PropertiesVisitor)
     }
+}
+
+#[derive(Deserialize, Debug)]
+struct Biomes {
+    palette: Vec<String>, // Will never contain more than 64 entries in vanilla but larger are supported.
+    data: Option<Vec<i64>>, // Contains 64 indices pointing ot the palette, biomes are stored in cells of 4x4x4 blocks. Not provided if only one biome is used for this section.
 }
