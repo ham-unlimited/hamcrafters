@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::{fmt::Display, io::Read};
 
 use crate::{NbtResult, error::NbtError, nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
 
@@ -253,4 +253,43 @@ impl NbtType for NbtLongArray {
     // fn to_tag_type(self) -> NbtTagType {
     //     NbtTagType::TagLongArray(self)
     // }
+}
+
+impl Display for NbtTagType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{}", match self {
+            NbtTagType::TagEnd => "".to_string(),
+            NbtTagType::TagByte(nbt_byte) => nbt_byte.0.to_string(),
+            NbtTagType::TagShort(nbt_short) => nbt_short.0.to_string(),
+            NbtTagType::TagInt(nbt_int) => nbt_int.0.to_string(),
+            NbtTagType::TagLong(nbt_long) => nbt_long.0.to_string(),
+            NbtTagType::TagFloat(nbt_float) => nbt_float.0.to_string(),
+            NbtTagType::TagDouble(nbt_double) => nbt_double.0.to_string(),
+            NbtTagType::TagByteArray(nbt_byte_array) => {
+                let s: Vec<String> = nbt_byte_array.0.iter().map(|b| b.0.to_string()).collect();
+                format!("[{}]", s.join(", "))
+            }
+            NbtTagType::TagString(nbt_string) => nbt_string.0.clone(),
+            NbtTagType::TagList(nbt_list) => {
+                let s: Vec<String> = nbt_list.0.iter().map(|b| b.to_string()).collect();
+                format!("[{}]", s.join(", "))
+            }
+            NbtTagType::TagCompound(nbt_compound) => {
+                let s: Vec<String> = nbt_compound
+                    .0
+                    .iter()
+                    .map(|tag| format!("{}: {}", tag.name.0.clone(), tag.payload.to_string()))
+                    .collect();
+                format!("{{{}}}", s.join(", "))
+            }
+            NbtTagType::TagIntArray(nbt_int_array) => {
+                let s: Vec<String> = nbt_int_array.0.iter().map(|b| b.0.to_string()).collect();
+                format!("[{}]", s.join(", "))
+            }
+            NbtTagType::TagLongArray(nbt_long_array) => {
+                let s: Vec<String> = nbt_long_array.0.iter().map(|b| b.0.to_string()).collect();
+                format!("[{}]", s.join(", "))
+            }
+        }))
+    }
 }
