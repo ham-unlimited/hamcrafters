@@ -1,13 +1,19 @@
 use std::io::Read;
 
 use log::warn;
-use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer};
+use nbt::{
+    nbt_named_tag::NbtNamedTag,
+    nbt_types::{NbtCompound, NbtString},
+    ser::deserializer::Deserializer,
+    tag_type::NbtTagType,
+};
 use serde::{Deserialize, de::Visitor};
 
 use crate::save::anvil::{AnvilError, AnvilResult};
 
 // Information taken from here: https://minecraft.fandom.com/wiki/Chunk_format
 // Although we should probably also consider this page: https://minecraft.fandom.com/wiki/Anvil_file_format
+// TODO: Implement those that are still NbtTagTypes.
 #[derive(Deserialize, Debug)]
 pub struct ChunkData {
     #[serde(rename = "DataVersion")]
@@ -23,17 +29,16 @@ pub struct ChunkData {
     #[serde(rename = "LastUpdate")]
     last_update: i64,
     sections: Vec<Section>,
-    // TODO: block_entities
-    // TODO: CarvingMasks? (Maybe not a thing anymore).
-    // TODO: Heightmaps
-    // TODO: Lights
-    // TODO: Entities
-    // TODO: fluid_ticks
-    // TODO: block_ticks
+    block_entities: NbtTagType,
+    #[serde(rename = "Heightmaps")]
+    heightmaps: NbtTagType,
+    fluid_ticks: NbtTagType,
+    block_ticks: NbtTagType,
     #[serde(rename = "InhabitedTime")]
     inhabited_time: i64,
-    // TODO: PostProcessing
-    // TODO: structures
+    #[serde(rename = "PostProcessing")]
+    post_processing: NbtTagType,
+    structures: NbtTagType,
 }
 
 impl ChunkData {
@@ -44,8 +49,6 @@ impl ChunkData {
 
         let deserializer = Deserializer::from_nbt_tag(tag.payload);
         let cd = ChunkData::deserialize(deserializer)?;
-
-        // TODO: Finish parsing the data.
 
         Ok(cd)
     }
@@ -58,7 +61,7 @@ pub struct Section {
     #[serde(rename = "Y")]
     y: i8,
     block_states: BlockStates,
-    biomes: Biomes, // TODO
+    biomes: Biomes,
     #[serde(rename = "BlockLight")]
     block_light: Option<Vec<i8>>, // Always 2048 long but serde only supports arrays of length 0..=32 (each half-byte is one block). Omitted if there is no light that reaches this section.
     #[serde(rename = "SkyLight")]
@@ -228,11 +231,18 @@ impl<'de> Visitor<'de> for PropertiesVisitor {
         let mut properties = vec![];
 
         // CRIMES AHOY! But hey, how would you solve it?
-        while let Some((field, value)) = map.next_entry::<String, serde_json::Value>()? {
+        while let Some((field, value)) = map.next_entry::<String, NbtTagType>()? {
             let f = field.clone();
             let v = value.clone();
-            let json_obj = serde_json::json!({ f: v });
-            let block_state: BlockState = match serde_json::from_value(json_obj) {
+            let tag = NbtNamedTag {
+                name: NbtString(f),
+                payload: v,
+            };
+
+            let deserializer = nbt::ser::deserializer::Deserializer::from_nbt_tag(
+                NbtTagType::TagCompound(NbtCompound(vec![tag])),
+            );
+            let block_state: BlockState = match BlockState::deserialize(deserializer) {
                 Ok(b) => b,
                 Err(err) => {
                     warn!(
