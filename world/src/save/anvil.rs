@@ -3,7 +3,7 @@ use std::{
     fs,
     io::{self, Cursor, Read},
     num::ParseIntError,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use flate2::read::ZlibDecoder;
@@ -13,7 +13,7 @@ use nbt::{
     nbt_types::{NbtString, NbtType},
 };
 
-use crate::save::chunk_data::{self, ChunkData};
+use crate::save::chunk_data::ChunkData;
 
 type U24 = u32;
 
@@ -197,6 +197,8 @@ struct ChunkMetadata {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
+
     use crate::save::anvil::read_regions;
 
     #[test]
@@ -221,12 +223,17 @@ mod tests {
 
         // println!("Successfully read {} chunks", chunks.len());
 
+        let before = Instant::now();
         let regions = read_regions("../test-data/test-world").expect("Failed to read regions");
         let chunk_count: usize = regions
             .values()
             .map(|r| r.iter().filter(|((_, _), cs)| cs.is_some()).count())
             .sum();
-        println!("Successfully read {chunk_count} chunks");
+        println!(
+            "Successfully read {chunk_count} chunks in {}s",
+            before.elapsed().as_secs_f64()
+        );
+
         // for ((region_x, region_z), region_chunks) in regions.iter() {
         //     println!("Region ({region_x}, {region_z})");
         //     for ((chunk_x, chunk_z), chunk_metadata) in region_chunks.iter() {
