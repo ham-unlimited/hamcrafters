@@ -20,6 +20,8 @@ pub mod error;
 pub mod nbt_named_tag;
 /// NBT type implementations.
 pub mod nbt_types;
+/// Deserialize impl for nbt format.
+pub mod nbt_value;
 /// Serde implementations for NBT.
 pub mod ser;
 /// SNBT (Serialized Named Binary Tag) implementation.
