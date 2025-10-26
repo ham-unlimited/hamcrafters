@@ -14,13 +14,19 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        feature: [client-handler, proxy]
+
+    name: build and test (${{ matrix.feature }})
+
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Clippy
-      run: cargo clippy --verbose
+    - name: Build with ${{ matrix.feature }}
+      run: cargo build --verbose --no-default-features --features ${{ matrix.feature }}
+    - name: Clippy with ${{ matrix.feature }}
+      run: cargo clippy --verbose --no-default-features --features ${{ matrix.feature }}
     - name: Check formatting
       run: cargo fmt --check
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Run tests with ${{ matrix.feature }}
+      run: cargo test --verbose --no-default-features --features ${{ matrix.feature }}
