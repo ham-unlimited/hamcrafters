@@ -59,6 +59,5 @@ async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
         .run()
         .await
         .wrap_err("Error occurred during running of program")?;
-
     Ok(())
 }
