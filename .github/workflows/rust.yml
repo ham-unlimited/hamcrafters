@@ -18,7 +18,7 @@ jobs:
       matrix:
         feature: [client-handler, proxy]
 
-    name: build and test (${{ matrix.feature }})
+    name: build (${{ matrix.feature }})
 
     steps:
     - uses: actions/checkout@v4
