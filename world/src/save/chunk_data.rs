@@ -2,18 +2,16 @@ use std::io::Read;
 
 use log::warn;
 use nbt::{
-    nbt_named_tag::NbtNamedTag,
-    nbt_types::{NbtCompound, NbtString},
-    ser::deserializer::Deserializer,
-    tag_type::NbtTagType,
+    nbt_named_tag::NbtNamedTag, nbt_value::nbt_value::NbtValue, ser::deserializer::Deserializer,
 };
+use serde::de::IntoDeserializer;
 use serde::{Deserialize, de::Visitor};
 
 use crate::save::anvil::{AnvilError, AnvilResult};
 
 // Information taken from here: https://minecraft.fandom.com/wiki/Chunk_format
 // Although we should probably also consider this page: https://minecraft.fandom.com/wiki/Anvil_file_format
-// TODO: Implement those that are still NbtTagTypes.
+// TODO: Implement those that are still NbtValues.
 #[derive(Deserialize, Debug)]
 pub struct ChunkData {
     #[serde(rename = "DataVersion")]
@@ -29,16 +27,16 @@ pub struct ChunkData {
     #[serde(rename = "LastUpdate")]
     last_update: i64,
     sections: Vec<Section>,
-    block_entities: NbtTagType,
+    block_entities: NbtValue,
     #[serde(rename = "Heightmaps")]
-    heightmaps: NbtTagType,
-    fluid_ticks: NbtTagType,
-    block_ticks: NbtTagType,
+    heightmaps: NbtValue,
+    fluid_ticks: NbtValue,
+    block_ticks: NbtValue,
     #[serde(rename = "InhabitedTime")]
     inhabited_time: i64,
     #[serde(rename = "PostProcessing")]
-    post_processing: NbtTagType,
-    structures: NbtTagType,
+    post_processing: NbtValue,
+    structures: NbtValue,
 }
 
 impl ChunkData {
@@ -231,17 +229,12 @@ impl<'de> Visitor<'de> for PropertiesVisitor {
         let mut properties = vec![];
 
         // CRIMES AHOY! But hey, how would you solve it?
-        while let Some((field, value)) = map.next_entry::<String, NbtTagType>()? {
+        while let Some((field, value)) = map.next_entry::<String, NbtValue>()? {
             let f = field.clone();
             let v = value.clone();
-            let tag = NbtNamedTag {
-                name: NbtString(f),
-                payload: v,
-            };
+            let val = NbtValue::Compound(vec![(f, v)].into_iter().collect());
 
-            let deserializer = nbt::ser::deserializer::Deserializer::from_nbt_tag(
-                NbtTagType::TagCompound(NbtCompound(vec![tag])),
-            );
+            let deserializer = val.into_deserializer();
             let block_state: BlockState = match BlockState::deserialize(deserializer) {
                 Ok(b) => b,
                 Err(err) => {

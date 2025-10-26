@@ -131,7 +131,7 @@ impl NbtType for NbtByteArray {
 }
 
 /// A string in NBT format.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NbtString(pub String);
 
 impl NbtType for NbtString {

@@ -1,24 +1,16 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, de::Visitor};
 
 use crate::{
-    nbt_named_tag::NbtNamedTag,
-    nbt_types::{
-        NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtFloat, NbtInt, NbtList, NbtLong,
-        NbtShort, NbtString,
-    },
-    tag_type::NbtTagType,
+    nbt_types::{NbtByte, NbtByteArray, NbtDouble, NbtFloat, NbtInt, NbtLong, NbtShort, NbtString},
+    nbt_value::nbt_value::NbtValue,
 };
-
-//! Generic NBT deserialized value, intended to function similar to serde_json's Value type.
-
-pub enum NbtValue {
-    
-}
 
 struct NbtValueVisitor;
 
 impl<'de> Visitor<'de> for NbtValueVisitor {
-    type Value = NbtTagType;
+    type Value = NbtValue;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("Any valid NBTTagType")
@@ -28,116 +20,116 @@ impl<'de> Visitor<'de> for NbtValueVisitor {
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByte(NbtByte(if v { 1 } else { 0 })))
+        Ok(NbtValue::Byte(if v { 1 } else { 0 }))
     }
 
     fn visit_i8<E>(self, v: i8) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByte(NbtByte(v)))
+        Ok(NbtValue::Byte(v))
     }
 
     fn visit_i16<E>(self, v: i16) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagShort(NbtShort(v)))
+        Ok(NbtValue::Short(v))
     }
 
     fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagInt(NbtInt(v)))
+        Ok(NbtValue::Int(v))
     }
 
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagLong(NbtLong(v)))
+        Ok(NbtValue::Long(v))
     }
 
     fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByte(NbtByte(v as i8)))
+        Ok(NbtValue::Byte(v as i8))
     }
 
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagShort(NbtShort(v as i16)))
+        Ok(NbtValue::Short(v as i16))
     }
 
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagInt(NbtInt(v as i32)))
+        Ok(NbtValue::Int(v as i32))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagLong(NbtLong(v as i64)))
+        Ok(NbtValue::Long(v as i64))
     }
 
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagFloat(NbtFloat(v)))
+        Ok(NbtValue::Float(v))
     }
 
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagDouble(NbtDouble(v)))
+        Ok(NbtValue::Double(v))
     }
 
     fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByte(NbtByte(v as i8)))
+        Ok(NbtValue::Byte(v as i8))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagString(NbtString(String::from(v))))
+        Ok(NbtValue::String(String::from(v)))
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagString(NbtString(v)))
+        Ok(NbtValue::String(v))
     }
 
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByteArray(NbtByteArray(
-            v.into_iter().map(|b| NbtByte(*b as i8)).collect(),
-        )))
+        Ok(NbtValue::ByteArray(
+            v.into_iter().map(|b| *b as i8).collect(),
+        ))
     }
 
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(NbtTagType::TagByteArray(NbtByteArray(
-            v.into_iter().map(|b| NbtByte(b as i8)).collect(),
-        )))
+        Ok(NbtValue::ByteArray(
+            v.into_iter().map(|b| b as i8).collect(),
+        ))
     }
 
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -156,23 +148,20 @@ impl<'de> Visitor<'de> for NbtValueVisitor {
             vec.push(elem);
         }
 
-        Ok(NbtTagType::TagList(NbtList(vec)))
+        Ok(NbtValue::List(vec))
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
     where
         A: serde::de::MapAccess<'de>,
     {
-        let mut vec = Vec::new();
+        let mut inner_map = HashMap::new();
 
         while let Some((key, value)) = map.next_entry()? {
-            vec.push(NbtNamedTag {
-                name: NbtString(key),
-                payload: value,
-            })
+            inner_map.insert(key, value);
         }
 
-        Ok(NbtTagType::TagCompound(NbtCompound(vec)))
+        Ok(NbtValue::Compound(inner_map))
     }
 }
 
