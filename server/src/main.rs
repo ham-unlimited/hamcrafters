@@ -36,7 +36,7 @@ async fn main() -> eyre::Result<()> {
 async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
     use proxy::ProxyHandler;
 
-    let proxy_addr = std::env::var("PROXY_TARGET").wrap_err("No proxy address set");
+    let proxy_addr = std::env::var("PROXY_TARGET").wrap_err("No proxy address set")?;
 
     info!("Setting up proxy...");
     let mut handler = ProxyHandler::new(stream, &proxy_addr)
