@@ -241,6 +241,7 @@ impl<'de> Visitor<'de> for PropertiesVisitor {
                     warn!(
                         "Failed to deserialize property: {{{field}: {value}}} converting to 'Unsupported', err: {err}"
                     );
+                    panic!("ASD");
                     BlockState::Unsupported {
                         name: field,
                         value: value.to_string(),
