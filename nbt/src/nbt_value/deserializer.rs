@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use serde::{
     Deserializer,
     de::{
-        IntoDeserializer, MapAccess,
-        value::{SeqDeserializer, StrDeserializer},
+        EnumAccess, IntoDeserializer, MapAccess, VariantAccess, Visitor,
+        value::{SeqDeserializer, StrDeserializer, StringDeserializer},
     },
 };
 
@@ -253,21 +253,45 @@ impl<'de> Deserializer<'de> for NbtValue {
 
     fn deserialize_enum<V>(
         self,
-        name: &'static str,
-        variants: &'static [&'static str],
+        _name: &'static str,
+        _variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        unsupported_value!("Enum")
+        let hash_map = match self {
+            NbtValue::String(s) => return visitor.visit_enum(s.into_deserializer()),
+            NbtValue::Compound(hash_map) => hash_map,
+            _ => {
+                return Err(Self::Error::Unexpected("Expected compound for enum"));
+            }
+        };
+
+        let mut iter = hash_map.into_iter();
+        let (key, val) = match iter.next() {
+            Some((k, v)) => (k, v),
+            None => {
+                return Err(Self::Error::Unexpected(
+                    "Expected enum map to contain an entry",
+                ));
+            }
+        };
+
+        if iter.next().is_some() {
+            return Err(Self::Error::Unexpected(
+                "Expected enum map to only contain one value",
+            ));
+        }
+
+        visitor.visit_enum(NbtValueEnumDeserializer::new(key, val))
     }
 
     fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        unsupported_value!("Identifier")
+        self.deserialize_str(visitor)
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -331,19 +355,19 @@ impl<'de> Deserializer<'de> for NbtValue {
     where
         V: serde::de::Visitor<'de>,
     {
-        unsupported_value!("Tuple")
+        self.deserialize_seq(visitor)
     }
 
     fn deserialize_tuple_struct<V>(
         self,
-        name: &'static str,
-        len: usize,
+        _name: &'static str,
+        _len: usize,
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        unsupported_value!("Tuple struct")
+        self.deserialize_seq(visitor)
     }
 }
 
@@ -382,5 +406,69 @@ impl<'de> MapAccess<'de> for NbtValueCompoundvisitor {
         };
 
         seed.deserialize(value.into_deserializer())
+    }
+}
+
+#[derive(Debug)]
+struct NbtValueEnumDeserializer {
+    key: String,
+    val: NbtValue,
+}
+
+impl NbtValueEnumDeserializer {
+    fn new(key: String, val: NbtValue) -> Self {
+        Self { key, val }
+    }
+}
+
+impl<'de> EnumAccess<'de> for NbtValueEnumDeserializer {
+    type Error = NbtValueError;
+    type Variant = NbtValueEnumVariantDeserializer;
+
+    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+    where
+        V: serde::de::DeserializeSeed<'de>,
+    {
+        seed.deserialize(StringDeserializer::new(self.key))
+            .map(|v| (v, NbtValueEnumVariantDeserializer { val: self.val }))
+    }
+}
+
+#[derive(Debug)]
+struct NbtValueEnumVariantDeserializer {
+    val: NbtValue,
+}
+
+impl<'de> VariantAccess<'de> for NbtValueEnumVariantDeserializer {
+    type Error = NbtValueError;
+
+    fn unit_variant(self) -> Result<(), Self::Error> {
+        // Should have been handled in deserialize_enum.
+        unsupported_value!("Enum Access unit variant should have been handled earlier")
+    }
+
+    fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+    where
+        T: serde::de::DeserializeSeed<'de>,
+    {
+        seed.deserialize(self.val)
+    }
+
+    fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        Deserializer::deserialize_seq(self.val, visitor)
+    }
+
+    fn struct_variant<V>(
+        self,
+        _fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        Deserializer::deserialize_map(self.val, visitor)
     }
 }
