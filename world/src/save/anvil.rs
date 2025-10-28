@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs,
     io::{self, Cursor, Read},
     num::ParseIntError,
@@ -45,55 +44,80 @@ pub enum AnvilError {
 
 pub type AnvilResult<T> = Result<T, AnvilError>;
 
-fn read_regions<P: AsRef<Path>>(
-    save_path: P,
-) -> AnvilResult<HashMap<(i32, i32), HashMap<(usize, usize), Option<ChunkMetadata>>>> {
-    let mut regions = HashMap::new();
+struct Regions {
+    regions: Vec<Region>,
+}
 
-    let regions_path = save_path.as_ref().join("region");
-    for path in fs::read_dir(regions_path)? {
-        let path = path?;
-        let file_name = path.file_name().to_string_lossy().to_string();
-        let Some(name) = file_name.strip_suffix(".mca") else {
-            continue;
-        };
-        let Some(name) = name.strip_prefix("r.") else {
-            continue;
-        };
+struct Region {
+    region_x: i32,
+    region_z: i32,
+    region_chunks: Vec<Chunk>,
+}
 
-        let Some((x, z)) = name.split_once(".") else {
-            continue;
-        };
+struct Chunk {
+    chunk_x: usize,
+    chunk_y: usize,
+    metadata: Option<ChunkMetadata>,
+}
 
-        let x = x.parse::<i32>()?;
-        let z = z.parse::<i32>()?;
+impl Regions {
+    fn read_regions<P: AsRef<Path>>(save_path: P) -> AnvilResult<Self> {
+        // let mut regions = HashMap::new();
+        let mut regions = Vec::new();
 
-        let region = Region::from_file(path.path())?;
-        let region_chunks = region.read_chunks()?;
-        regions.insert((x, z), region_chunks);
+        let regions_path = save_path.as_ref().join("region");
+        for path in fs::read_dir(regions_path)? {
+            let path = path?;
+            let file_name = path.file_name().to_string_lossy().to_string();
+            let Some(name) = file_name.strip_suffix(".mca") else {
+                continue;
+            };
+            let Some(name) = name.strip_prefix("r.") else {
+                continue;
+            };
+
+            let Some((x, z)) = name.split_once(".") else {
+                continue;
+            };
+
+            let x = x.parse::<i32>()?;
+            let z = z.parse::<i32>()?;
+
+            let region = RegionParser::from_file(path.path())?;
+            let region_chunks = region.read_chunks()?;
+            regions.push(Region {
+                region_x: x,
+                region_z: z,
+                region_chunks,
+            })
+        }
+
+        Ok(Self { regions })
     }
-
-    Ok(regions)
 }
 
 #[derive(Debug, Clone)]
-struct Region {
+struct RegionParser {
     data: Vec<u8>,
 }
 
-impl Region {
+impl RegionParser {
     fn from_file<P: AsRef<Path>>(path: P) -> AnvilResult<Self> {
         Ok(Self {
             data: fs::read(path)?,
         })
     }
 
-    fn read_chunks(&self) -> AnvilResult<HashMap<(usize, usize), Option<ChunkMetadata>>> {
-        let mut chunks = HashMap::new();
+    fn read_chunks(&self) -> AnvilResult<Vec<Chunk>> {
+        let mut chunks = Vec::new();
         for z in 0..32 {
             for x in 0..32 {
                 let chunk = self.read_chunk_at(x, z)?;
-                chunks.insert((x, z), chunk);
+                chunks.push(Chunk {
+                    chunk_x: x,
+                    chunk_y: z,
+                    metadata: chunk,
+                });
             }
         }
 
@@ -199,51 +223,45 @@ struct ChunkMetadata {
 mod tests {
     use std::time::Instant;
 
-    use crate::save::anvil::read_regions;
+    use crate::save::anvil::Regions;
 
     #[test]
     fn parse_file_successfully() {
         unsafe {
             std::env::set_var("RUST_LOG", "info");
-            // std::env::set_var("RUST_LOG", "warn");
         }
 
         pretty_env_logger::init();
 
-        // let file = std::fs::File::open("../test-data/test-world/region/r.0.0.mca").unwrap();
-        // let mut fa = fastanvil::Region::from_stream(file).unwrap();
-        // let chunk = fa.read_chunk(0, 0).unwrap();
-        // log::info!("Chunk {}", chunk.unwrap().iter().len());
-
-        // let region = Region::from_file("../test-data/test-world/region/r.0.0.mca")
-        //     .expect("Failed to open region");
-        // let chunks = region
-        //     .read_chunks()
-        //     .expect("Failed to read chunks in region");
-
-        // println!("Successfully read {} chunks", chunks.len());
-
         let before = Instant::now();
-        let regions = read_regions("../test-data/test-world").expect("Failed to read regions");
+        let regions =
+            Regions::read_regions("../test-data/test-world").expect("Failed to read regions");
         let chunk_count: usize = regions
-            .values()
-            .map(|r| r.iter().filter(|((_, _), cs)| cs.is_some()).count())
+            .regions
+            .iter()
+            .map(|r| {
+                r.region_chunks
+                    .iter()
+                    .filter(|cs| cs.metadata.is_some())
+                    .count()
+            })
             .sum();
         println!(
             "Successfully read {chunk_count} chunks in {}s",
             before.elapsed().as_secs_f64()
         );
 
-        // for ((region_x, region_z), region_chunks) in regions.iter() {
-        //     println!("Region ({region_x}, {region_z})");
-        //     for ((chunk_x, chunk_z), chunk_metadata) in region_chunks.iter() {
-        //         println!(
-        //             "\tChunk ({chunk_x}, {chunk_z}) IsEmpty? {}",
-        //             chunk_metadata.is_some()
-        //         );
-        //     }
-        // }
-
         assert_eq!(true, false);
+    }
+
+    #[test]
+    fn serialize_deserialize_yields_same() {
+        unsafe {
+            std::env::set_var("RUST_LOG", "info");
+        }
+
+        pretty_env_logger::init();
+
+        // let mut regions = read_regions("../test-data/test-world").expect("Failed to read regions");
     }
 }
