@@ -33,6 +33,7 @@ impl<T: Serialize, const MAX_SIZE: usize> Serialize for JsonString<T, MAX_SIZE> 
     }
 }
 
+// TODO: Do we want this? We don't validate that Default::default() respects MAX_SIZE and validating it would require a panic since default must result Self (not Result).
 impl<T: Default, const MAX_SIZE: usize> Default for JsonString<T, MAX_SIZE> {
     fn default() -> Self {
         Self {
