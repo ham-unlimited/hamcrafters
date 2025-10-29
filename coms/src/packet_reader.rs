@@ -64,8 +64,6 @@ impl<R: AsyncRead + Unpin> NetworkReader<R> {
 
         let packet_len = packet_len.0 as u64;
 
-        // TODO: Validate packet length.
-
         let mut packet_reader = (&mut self.reader).take(packet_len);
 
         let packet_id = VarInt::decode_async(&mut packet_reader)
