@@ -2,8 +2,12 @@ use log::info;
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
     client_state::ClientState,
+    key_store::KeyStore,
     messages::{
-        clientbound::status::{pong_response::PongResponse, status_response::StatusResponse},
+        clientbound::{
+            login::encryption_request::EncryptionRequest,
+            status::{pong_response::PongResponse, status_response::StatusResponse},
+        },
         serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
     },
     packet_reader::{NetworkReader, PacketReadError, RawPacket},
@@ -21,16 +25,17 @@ use tokio::{
 use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
-pub struct ClientHandler {
+pub struct ClientHandler<'key> {
     reader: NetworkReader<BufReader<OwnedReadHalf>>,
     state: ClientState,
+    key_store: &'key KeyStore,
     network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
 }
 
-impl ClientHandler {
+impl<'key> ClientHandler<'key> {
     /// Creates a new [ClientHandler] from the provided [TcpStream].
     #[must_use]
-    pub fn new(stream: TcpStream) -> Self {
+    pub fn new(stream: TcpStream, key_store: &'key KeyStore) -> Self {
         let (r, w) = stream.into_split();
 
         let reader = NetworkReader::new(BufReader::new(r));
@@ -39,6 +44,7 @@ impl ClientHandler {
         Self {
             reader,
             state: ClientState::Handshaking,
+            key_store,
             network_writer: writer,
         }
     }
@@ -57,7 +63,7 @@ impl ClientHandler {
             match self.state {
                 ClientState::Handshaking => self.handle_handshake_packet(packet)?,
                 ClientState::Status => self.handle_status_packet(packet).await?,
-                ClientState::Login => todo!("Login not yet supported"),
+                ClientState::Login => self.handle_login_packet(packet).await?,
             }
         }
     }
@@ -121,6 +127,31 @@ impl ClientHandler {
                 self.network_writer.write_packet(pong_response).await?;
 
                 info!("Responded to ping request")
+            }
+            id => {
+                return Err(ClientError::UnsupportedPacketId {
+                    packet_id: id,
+                    state: ClientState::Status,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    async fn handle_login_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
+        match packet.id {
+            0x0 => {
+                info!("Got login start request");
+
+                info!("Creating encryption request");
+                let encryption_request =
+                    EncryptionRequest::new(self.key_store.get_der_public_key());
+
+                info!("Encryption request: {encryption_request:?}");
+
+                self.network_writer.write_packet(encryption_request).await?;
+
+                info!("Responded to encryption request");
             }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
