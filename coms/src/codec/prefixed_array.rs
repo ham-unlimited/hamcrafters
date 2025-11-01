@@ -1,7 +1,7 @@
 use serde::de::{self, Deserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::codec::var_int::VarInt;
 
@@ -65,20 +65,15 @@ where
     }
 }
 
-impl<T: Serialize> Serialize for PrefixedArray<T> {
+impl<T: Serialize + Debug> Serialize for PrefixedArray<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let mut buf = Vec::new();
-        let i = VarInt::from(self.0.len() as i32);
-        i.encode(&mut buf)
-            .map_err(|_| serde::ser::Error::custom("Could not encode length."))?;
-
         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-        seq.serialize_element(&buf)?;
-        for a in self.0.iter() {
-            seq.serialize_element(a)?;
+
+        for elem in self.0.iter() {
+            seq.serialize_element(elem)?;
         }
 
         seq.end()

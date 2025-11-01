@@ -147,7 +147,7 @@ impl<'key> ClientHandler<'key> {
                 let encryption_request =
                     EncryptionRequest::new(self.key_store.get_der_public_key());
 
-                info!("Encryption request: {encryption_request:?}");
+                info!("Encryption request: {encryption_request:02x?}");
 
                 self.network_writer.write_packet(encryption_request).await?;
 
