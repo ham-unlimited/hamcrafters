@@ -8,6 +8,8 @@ use crate::codec::prefixed_array::PrefixedArray;
 #[derive(Debug, Deserialize)]
 #[mc_packet(0x01)]
 pub struct EncryptionResponse {
-    shared_secret: String,
-    verify_token: PrefixedArray<u8>,
+    /// Symmetric key to be used to encrypt/decrypt future communication, encrypted using the servers public key.
+    pub shared_secret: PrefixedArray<u8>,
+    /// A verification token encrypted using the shared secret.
+    pub verify_token: PrefixedArray<u8>,
 }

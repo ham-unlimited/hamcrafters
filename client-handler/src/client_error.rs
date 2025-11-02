@@ -1,5 +1,6 @@
 use mc_coms::{
     client_state::ClientState,
+    key_store::EncryptionError,
     packet_reader::PacketReadError,
     packet_writer::PacketWriteError,
     ser::{ReadingError, WritingError},
@@ -26,4 +27,12 @@ pub enum ClientError {
     },
     #[error("Invalid packet ID {packet_id} for state {state:?}")]
     UnsupportedPacketId { packet_id: i32, state: ClientState },
+    #[error(
+        "An error occurred during encryption / decryption using the pub/priv key scheme, err: {0}"
+    )]
+    PubPrivEncryptionError(#[from] EncryptionError),
+    #[error("Received verify token was invalid")]
+    InvalidVerifyToken,
+    #[error("Shared secret was invalid")]
+    InvalidSharedSecret,
 }

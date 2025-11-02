@@ -1,4 +1,7 @@
-use rsa::{RsaPrivateKey, traits::PublicKeyParts};
+use rsa::{
+    Pkcs1v15Encrypt, RsaPrivateKey,
+    traits::{PaddingScheme, PublicKeyParts},
+};
 
 /// Encryption errors.
 #[allow(missing_docs)]
@@ -6,6 +9,8 @@ use rsa::{RsaPrivateKey, traits::PublicKeyParts};
 pub enum EncryptionError {
     #[error("Failed to generate private key: {0}")]
     PrivateKeyGenFailure(#[from] rsa::Error),
+    #[error("Failed to decrypt data, err: {0}")]
+    DecryptFailure(rsa::Error),
 }
 
 /// A keystore for keeping minecraft encryption keys.
@@ -31,5 +36,12 @@ impl KeyStore {
             self.private_key.n().to_bytes_be().as_slice(),
             self.private_key.e().to_bytes_be().as_slice(),
         )
+    }
+
+    /// Decrypt the provided data.
+    pub fn decrypt(&self, data: &[u8]) -> Result<Vec<u8>, EncryptionError> {
+        self.private_key
+            .decrypt(Pkcs1v15Encrypt, &data)
+            .map_err(|err| EncryptionError::DecryptFailure(err))
     }
 }
