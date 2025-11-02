@@ -1,5 +1,6 @@
-use std::io;
+use std::io::{self, Cursor};
 
+use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
 use log::error;
 use serde::Serialize;
 use thiserror::Error;
@@ -27,12 +28,29 @@ pub enum PacketWriteError {
 /// A writing for writing packets to the network.
 pub struct NetworkWriter<W: AsyncWrite + Unpin> {
     writer: W,
+    encryption_key: Option<Encryption>,
 }
 
 impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
-    /// Returns a new [NetworkWriter] using the provided [writer] as output.
+    /// Returns a new [NetworkWriter] using the provided [writer] as output and no encryption.
     pub fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            encryption_key: None,
+        }
+    }
+
+    /// Enable encryption for this writer. Note: once enabled, you cannot disable encryption.
+    pub fn enable_encryption(&mut self, key: &[u8; 16]) -> Result<(), PacketWriteError> {
+        // TODO: Check that encryption isn't already enabled.
+
+        log::info!("Enabling encryption for writer");
+        let cipher =
+            cfb8::Encryptor::<aes::Aes128>::new_from_slices(key, key).expect("invalid key");
+
+        self.encryption_key = Some(Encryption { cipher: cipher });
+
+        Ok(())
     }
 
     /// Writes a mc_packet to the internal writer.
@@ -55,11 +73,42 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
             PacketWriteError::PacketLengthTooLarge
         })?;
 
-        packet_length.encode_async(&mut self.writer).await?;
-        self.writer.write_all(&packet_buffer).await?;
+        match self.encryption_key.as_mut() {
+            Some(s) => {
+                let mut encryption_buffer = Vec::new();
+                packet_length.encode_async(&mut encryption_buffer).await?;
+                io::copy(&mut Cursor::new(packet_buffer), &mut encryption_buffer)?;
+
+                let mut bf = Vec::new();
+
+                // Decrypt the raw data, note that our block size is 1 byte, so this is always safe
+                for block in encryption_buffer.chunks(cfb8::Encryptor::<aes::Aes128>::block_size())
+                {
+                    let mut out = [0u8];
+
+                    // This is a stream cipher, so this value must be used
+                    // TODO: Wait for aes/crypto-common to update generic array
+                    #[expect(deprecated)]
+                    let out_block = GenericArray::from_mut_slice(&mut out);
+                    s.cipher.encrypt_block_b2b_mut(block.into(), out_block);
+
+                    bf.push(out_block[0]);
+                }
+
+                self.writer.write_all(&bf).await?;
+            }
+            None => {
+                packet_length.encode_async(&mut self.writer).await?;
+                self.writer.write_all(&packet_buffer).await?;
+            }
+        }
 
         self.writer.flush().await?;
 
         Ok(())
     }
+}
+
+struct Encryption {
+    cipher: cfb8::Encryptor<aes::Aes128>,
 }

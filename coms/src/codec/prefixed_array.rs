@@ -9,6 +9,13 @@ use crate::codec::var_int::VarInt;
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PrefixedArray<T>(Vec<T>);
 
+impl<T> PrefixedArray<T> {
+    /// Get a reference to contained vector.
+    pub fn inner(&self) -> &Vec<T> {
+        &self.0
+    }
+}
+
 impl<'de, T> Deserialize<'de> for PrefixedArray<T>
 where
     T: Deserialize<'de>,
@@ -42,7 +49,15 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
+                log::info!("LENGTH {length:?}");
+
                 let mut items = Vec::with_capacity(length.0 as usize);
+
+                // let mut items = Vec::new();
+
+                // while let Some(item) = seq.next_element()? {
+                //     items.push(item);
+                // }
 
                 for i in 0..length.0 {
                     let item: T = seq
@@ -51,9 +66,7 @@ where
                     items.push(item);
                 }
 
-                if seq.next_element::<de::IgnoredAny>()?.is_some() {
-                    return Err(de::Error::custom("extra elements after the prefixed array"));
-                }
+                // TODO: Check if there are more elements.
 
                 Ok(PrefixedArray(items))
             }

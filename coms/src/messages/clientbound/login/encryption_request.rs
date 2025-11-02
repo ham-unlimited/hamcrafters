@@ -8,10 +8,14 @@ use crate::codec::prefixed_array::PrefixedArray;
 #[derive(Debug, Deserialize, Serialize)]
 #[mc_packet(0x01)]
 pub struct EncryptionRequest {
-    server_id: String, // Empty for vanilla server
-    public_key: PrefixedArray<u8>,
-    verify_token: PrefixedArray<u8>,
-    should_authenticate: bool,
+    /// An identify of the server, empty for a usual vanilla server.
+    pub server_id: String,
+    /// Servers public key.
+    pub public_key: PrefixedArray<u8>,
+    /// A verification token to ensure that the [EncryptionResponse] is correctly encrypted.
+    pub verify_token: PrefixedArray<u8>,
+    /// Weather the client (and server) should validate the session against Mojang servers.
+    pub should_authenticate: bool,
 }
 
 impl EncryptionRequest {

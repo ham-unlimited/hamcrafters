@@ -1,4 +1,4 @@
-use log::info;
+use log::{error, info};
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
     client_state::ClientState,
@@ -8,7 +8,10 @@ use mc_coms::{
             login::encryption_request::EncryptionRequest,
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
-        serverbound::{handshaking::handshake::Handshake, status::ping_request::PingRequest},
+        serverbound::{
+            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
+            status::ping_request::PingRequest,
+        },
     },
     packet_reader::{NetworkReader, PacketReadError, RawPacket},
     packet_writer::NetworkWriter,
@@ -26,10 +29,10 @@ use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
 pub struct ClientHandler<'key> {
-    reader: NetworkReader<BufReader<OwnedReadHalf>>,
     state: ClientState,
     key_store: &'key KeyStore,
     network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
+    network_reader: NetworkReader<BufReader<OwnedReadHalf>>,
 }
 
 impl<'key> ClientHandler<'key> {
@@ -42,9 +45,9 @@ impl<'key> ClientHandler<'key> {
         let writer = NetworkWriter::new(BufWriter::new(w));
 
         Self {
-            reader,
             state: ClientState::Handshaking,
             key_store,
+            network_reader: reader,
             network_writer: writer,
         }
     }
@@ -52,13 +55,13 @@ impl<'key> ClientHandler<'key> {
     /// Starts listening for & handling packets from the server.
     pub async fn run(&mut self) -> Result<(), ClientError> {
         loop {
-            let packet = match self.reader.get_packet().await {
+            let packet = match self.network_reader.get_packet().await {
                 Ok(p) => p,
                 Err(PacketReadError::ConnectionClosed) => return Ok(()),
                 Err(err) => return Err(err.into()),
             };
 
-            info!("Got new packet: {packet:?}");
+            info!("Got new packet: {packet:02x?}");
 
             match self.state {
                 ClientState::Handshaking => self.handle_handshake_packet(packet)?,
@@ -149,14 +152,46 @@ impl<'key> ClientHandler<'key> {
 
                 info!("Encryption request: {encryption_request:02x?}");
 
+                info!("Verify token: {:02x?}", encryption_request.verify_token);
+
                 self.network_writer.write_packet(encryption_request).await?;
 
                 info!("Responded to encryption request");
             }
+            0x1 => {
+                info!("Got encryption response");
+
+                let encryption_response =
+                    EncryptionResponse::deserialize(&mut packet.get_deserializer())?;
+
+                info!("Encryption response: {encryption_response:02x?}");
+
+                let shared_secret = self
+                    .key_store
+                    .decrypt(encryption_response.shared_secret.inner())?;
+
+                let verify_token = self
+                    .key_store
+                    .decrypt(encryption_response.verify_token.inner())?;
+
+                if verify_token.as_slice() != &[b'h', b'a', b'm'] {
+                    error!("Verify token incorrect!");
+                    return Err(ClientError::InvalidVerifyToken);
+                } else {
+                    info!("Verify token correct")
+                }
+
+                let shared_secret: [u8; 16] = shared_secret
+                    .try_into()
+                    .map_err(|_| ClientError::InvalidSharedSecret)?;
+
+                self.network_writer.enable_encryption(&shared_secret)?;
+                self.network_reader.enable_encryption(&shared_secret)?;
+            }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
                     packet_id: id,
-                    state: ClientState::Status,
+                    state: ClientState::Login,
                 });
             }
         }
