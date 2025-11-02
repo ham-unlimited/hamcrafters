@@ -1,4 +1,8 @@
 use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, traits::PublicKeyParts};
+use rsa::{
+    Pkcs1v15Encrypt, RsaPrivateKey,
+    traits::{PaddingScheme, PublicKeyParts},
+};
 
 /// Encryption errors.
 #[allow(missing_docs)]
@@ -37,7 +41,7 @@ impl KeyStore {
     /// Decrypt the provided data.
     pub fn decrypt(&self, data: &[u8]) -> Result<Vec<u8>, EncryptionError> {
         self.private_key
-            .decrypt(Pkcs1v15Encrypt, data)
-            .map_err(EncryptionError::DecryptFailure)
+            .decrypt(Pkcs1v15Encrypt, &data)
+            .map_err(|err| EncryptionError::DecryptFailure(err))
     }
 }
