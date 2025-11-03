@@ -16,6 +16,13 @@ impl<T> PrefixedArray<T> {
     }
 }
 
+impl<T> PrefixedArray<T> {
+    /// Create a new empty [PrefixedArray].
+    pub fn empty() -> Self {
+        Self(vec![])
+    }
+}
+
 impl<'de, T> Deserialize<'de> for PrefixedArray<T>
 where
     T: Deserialize<'de>,
