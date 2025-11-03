@@ -1,11 +1,17 @@
+use std::str::FromStr;
+
 use log::{error, info};
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
     client_state::ClientState,
+    codec::{prefixed_array::PrefixedArray, uuid},
     key_store::KeyStore,
     messages::{
         clientbound::{
-            login::encryption_request::EncryptionRequest,
+            login::{
+                encryption_request::EncryptionRequest,
+                login_success::{GameProfile, LoginSuccess},
+            },
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
         serverbound::{
@@ -187,6 +193,18 @@ impl<'key> ClientHandler<'key> {
 
                 self.network_writer.enable_encryption(&shared_secret)?;
                 self.network_reader.enable_encryption(&shared_secret)?;
+
+                let login_success = LoginSuccess {
+                    profile: GameProfile {
+                        uuid: uuid::Uuid::from_str("00002a4a-0000-1000-8000-00805f9b34fb"),
+                        username: "Pepe".into(),
+                        properties: PrefixedArray::empty(),
+                    },
+                };
+
+                info!("Responding with login success");
+
+                self.network_writer.write_packet(login_success).await?;
             }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
