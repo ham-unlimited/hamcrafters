@@ -908,6 +908,7 @@ dependencies = [
  "log",
  "mc-coms",
  "mc-server-rs",
+ "serde",
  "thiserror",
  "tokio",
  "turmoil",

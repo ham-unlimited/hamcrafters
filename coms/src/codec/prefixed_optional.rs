@@ -1,13 +1,38 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde::Deserializer;
 use serde::de;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
+use serde::ser::{SerializeSeq, Serializer};
 use std::fmt;
 
 /// The present variable decides if the data is present
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PrefixedOptional<T>(Option<T>);
+
+impl<T> Serialize for PrefixedOptional<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match &self.0 {
+            Some(value) => {
+                let mut seq = serializer.serialize_seq(Some(2))?;
+                seq.serialize_element(&true)?;
+                seq.serialize_element(value)?;
+                seq.end()
+            }
+            None => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                seq.serialize_element(&false)?;
+                seq.end()
+            }
+        }
+    }
+}
 
 impl<'de, T> Deserialize<'de> for PrefixedOptional<T>
 where
