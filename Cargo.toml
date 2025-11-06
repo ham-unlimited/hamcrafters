@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt"]
+members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt", "sim"]
 
 [workspace.dependencies]
 mc-coms = { path = "./coms" }
@@ -14,3 +14,4 @@ thiserror = "2.0.17"
 uuid = "1.18"
 bytes = "1.10"
 log = "0.4.28"
+async-trait = "0.1.89"
