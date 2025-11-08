@@ -37,8 +37,10 @@ async fn main() -> eyre::Result<()> {
 
 // TODO: Keystore
 #[cfg(feature = "proxy")]
-async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
+async fn handle_connection(stream: TcpStream, _key_store: &KeyStore) -> eyre::Result<()> {
     use proxy::ProxyHandler;
+
+    // TODO: key_store
 
     let proxy_addr = std::env::var("PROXY_TARGET").wrap_err("No proxy address set")?;
 
