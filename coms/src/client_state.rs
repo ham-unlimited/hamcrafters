@@ -8,4 +8,6 @@ pub enum ClientState {
     Status,
     /// Login state.
     Login,
+    /// Configuration state (after login).
+    Configuration,
 }

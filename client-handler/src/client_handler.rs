@@ -4,7 +4,7 @@ use log::{error, info};
 use mc_coms::{
     SUPPORTED_MINECRAFT_PROTOCOL_VERSION,
     client_state::ClientState,
-    codec::{prefixed_array::PrefixedArray, uuid},
+    codec::prefixed_array::PrefixedArray,
     key_store::KeyStore,
     messages::{
         clientbound::{
@@ -15,7 +15,8 @@ use mc_coms::{
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
         serverbound::{
-            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
+            handshaking::handshake::Handshake,
+            login::encryption_response::EncryptionResponse,
             status::ping_request::PingRequest,
         },
     },
@@ -30,6 +31,7 @@ use tokio::{
         tcp::{OwnedReadHalf, OwnedWriteHalf},
     },
 };
+use uuid::Uuid;
 
 use crate::client_error::ClientError;
 
@@ -67,12 +69,13 @@ impl<'key> ClientHandler<'key> {
                 Err(err) => return Err(err.into()),
             };
 
-            info!("Got new packet: {packet:02x?}");
+            info!("Got new packet (state: {:?}): {packet:02x?}", self.state);
 
             match self.state {
                 ClientState::Handshaking => self.handle_handshake_packet(packet)?,
                 ClientState::Status => self.handle_status_packet(packet).await?,
                 ClientState::Login => self.handle_login_packet(packet).await?,
+                ClientState::Configuration => self.handle_configuration_packet(packet).await?,
             }
         }
     }
@@ -194,9 +197,11 @@ impl<'key> ClientHandler<'key> {
                 self.network_writer.enable_encryption(&shared_secret)?;
                 self.network_reader.enable_encryption(&shared_secret)?;
 
+                let id = Uuid::from_str("00002a4a-0000-1000-8000-00805f9b34fb")?;
+
                 let login_success = LoginSuccess {
                     profile: GameProfile {
-                        uuid: uuid::Uuid::from_str("00002a4a-0000-1000-8000-00805f9b34fb"),
+                        uuid: id,
                         username: "Pepe".into(),
                         properties: PrefixedArray::empty(),
                     },
@@ -205,6 +210,10 @@ impl<'key> ClientHandler<'key> {
                 info!("Responding with login success");
 
                 self.network_writer.write_packet(login_success).await?;
+            }
+            0x3 => {
+                info!("Login acknowledged received");
+                self.state = ClientState::Configuration;
             }
             id => {
                 return Err(ClientError::UnsupportedPacketId {

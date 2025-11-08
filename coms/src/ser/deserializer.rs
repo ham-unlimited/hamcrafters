@@ -5,7 +5,11 @@ use serde::de::{
     Visitor,
 };
 
-use crate::ser::{NetworkReadExt, ReadingError};
+use crate::{
+    codec::var_int::VarInt,
+    ser::{NetworkReadExt, ReadingError},
+    serial::PacketRead,
+};
 
 /// A deserializer for Minecraft packets.
 pub struct Deserializer<R: Read> {
@@ -101,7 +105,19 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
     }
 
     fn deserialize_string<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
-        visitor.visit_str(&self.inner.get_string()?)
+        let s = VarInt::decode(&mut self.inner)
+            .map_err(|err| ReadingError::Incomplete(err.to_string()))?; // TODO: Error?
+
+        log::info!("Got string of length {s:?} {}", s.0);
+        let mut buf = vec![0; s.0 as usize];
+        self.inner
+            .read(&mut buf)
+            .map_err(|err| ReadingError::Message(err.to_string()))?;
+
+        let s = String::from_utf8(buf)
+            .map_err(|err| ReadingError::Message(format!("Invalid utf-8 in string {err}")))?;
+
+        visitor.visit_str(&s)
     }
 
     fn deserialize_bytes<V: Visitor<'de>>(self, _visitor: V) -> Result<V::Value, Self::Error> {
