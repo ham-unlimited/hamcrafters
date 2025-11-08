@@ -1,5 +1,6 @@
 use std::io::{self, Cursor};
 
+#[allow(deprecated)]
 use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
 use log::error;
 use serde::Serialize;

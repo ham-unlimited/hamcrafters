@@ -1,6 +1,5 @@
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::Serialize;
 use serde::de;
 use serde::de::SeqAccess;
 use serde::de::Visitor;

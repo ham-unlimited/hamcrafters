@@ -31,6 +31,8 @@ pub enum ClientError {
         "An error occurred during encryption / decryption using the pub/priv key scheme, err: {0}"
     )]
     PubPrivEncryptionError(#[from] EncryptionError),
+    #[error("Failed to parse UUID `{0}`")]
+    UuidParseError(#[from] uuid::Error),
     #[error("Received verify token was invalid")]
     InvalidVerifyToken,
     #[error("Shared secret was invalid")]

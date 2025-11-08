@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Login success message, returns the game profile of the mc player
+#[doc(hidden)]
 #[derive(Debug, Deserialize, Serialize)]
 #[mc_packet(0x02)]
 pub struct LoginSuccess {
@@ -14,6 +15,7 @@ pub struct LoginSuccess {
 }
 
 /// A minecraft game profile
+#[doc(hidden)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GameProfile {
     pub uuid: Uuid,
@@ -21,9 +23,10 @@ pub struct GameProfile {
     pub properties: PrefixedArray<Property>,
 }
 
+#[doc(hidden)]
 #[derive(Debug, Deserialize, Serialize)]
-struct Property {
-    name: String,
-    value: String,
-    signature: Option<String>,
+pub struct Property {
+    pub name: String,
+    pub value: String,
+    pub signature: Option<String>,
 }
