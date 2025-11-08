@@ -1,8 +1,4 @@
 use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, traits::PublicKeyParts};
-use rsa::{
-    Pkcs1v15Encrypt, RsaPrivateKey,
-    traits::{PaddingScheme, PublicKeyParts},
-};
 
 /// Encryption errors.
 #[allow(missing_docs)]

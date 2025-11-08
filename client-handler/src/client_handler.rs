@@ -6,7 +6,6 @@ use mc_coms::{
     client_state::ClientState,
     codec::prefixed_array::PrefixedArray,
     key_store::KeyStore,
-    key_store::KeyStore,
     messages::{
         McPacketRead,
         clientbound::{

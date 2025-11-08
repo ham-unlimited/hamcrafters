@@ -1,18 +1,16 @@
-use std::io::{self, Cursor};
-
-#[allow(deprecated)]
-use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
-use log::error;
-use serde::Serialize;
-use thiserror::Error;
-use tokio::io::{AsyncWrite, AsyncWriteExt};
-
 use crate::{
     ClientPacket,
     codec::var_int::VarInt,
     messages::McPacket,
     ser::{NetworkWriteExt, WritingError},
 };
+#[allow(deprecated)]
+use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
+use log::error;
+use serde::Serialize;
+use std::io::{self, Cursor};
+use thiserror::Error;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 /// Error that occurrs during the writing of a packet.
 #[allow(missing_docs)]

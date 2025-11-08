@@ -1,14 +1,13 @@
-use std::{
-    io::{self, Cursor},
-    pin::Pin,
-    task::{Context, Poll},
-};
-
 use crate::{
     codec::var_int::VarInt,
     ser::{ReadingError, deserializer::Deserializer},
 };
 use aes::cipher::{BlockDecryptMut, BlockSizeUser, KeyIvInit};
+use std::{
+    io::{self, Cursor},
+    pin::Pin,
+    task::{Context, Poll},
+};
 use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 

@@ -1,14 +1,12 @@
-use std::{fmt::Display, io::Read};
-
-use serde::de::{
-    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
-    Visitor,
-};
-
 use crate::{
     codec::var_int::VarInt,
     ser::{NetworkReadExt, ReadingError},
 };
+use serde::de::{
+    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
+    Visitor,
+};
+use std::{fmt::Display, io::Read};
 
 /// A deserializer for Minecraft packets.
 pub struct Deserializer<R: Read> {

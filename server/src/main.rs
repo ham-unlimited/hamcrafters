@@ -1,6 +1,5 @@
 use eyre::Context;
 use log::info;
-
 use mc_coms::key_store::KeyStore;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
