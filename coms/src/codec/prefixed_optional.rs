@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use serde::Deserializer;
 use serde::de;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
-use serde::ser::{SerializeSeq, Serializer};
+use serde::ser::Serializer;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// The present variable decides if the data is present
@@ -19,17 +19,8 @@ where
         S: Serializer,
     {
         match &self.0 {
-            Some(value) => {
-                let mut seq = serializer.serialize_seq(Some(2))?;
-                seq.serialize_element(&true)?;
-                seq.serialize_element(value)?;
-                seq.end()
-            }
-            None => {
-                let mut seq = serializer.serialize_seq(Some(1))?;
-                seq.serialize_element(&false)?;
-                seq.end()
-            }
+            Some(value) => serializer.serialize_some(value),
+            None => serializer.serialize_none(),
         }
     }
 }

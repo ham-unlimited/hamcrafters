@@ -18,12 +18,15 @@ use tokio::{
 use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
-pub struct ClientHandler<S: AsyncRead + AsyncWrite + Send + Unpin> {
+pub struct ClientHandler<S> {
     stream: S,
     state: ClientState,
 }
 
-impl<S: AsyncRead + AsyncWrite + Send + Unpin> ClientHandler<S> {
+impl<S> ClientHandler<S>
+where
+    S: AsyncRead + AsyncWrite + Send + Unpin,
+{
     /// Creates a new [ClientHandler] from the provided stream.
     #[must_use]
     pub fn new(stream: S) -> Self {
