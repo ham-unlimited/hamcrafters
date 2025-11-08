@@ -15,7 +15,12 @@ use mc_coms::{
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
         serverbound::{
-            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
+            configuration::{
+                client_information::ClientInformation,
+                serverbound_plugin_message::ServerboundPluginMessage,
+            },
+            handshaking::handshake::Handshake,
+            login::encryption_response::EncryptionResponse,
             status::ping_request::PingRequest,
         },
     },
@@ -224,10 +229,26 @@ impl<'key> ClientHandler<'key> {
         Ok(())
     }
 
-    // TODO: Remove (these are here because we will expand this function in the future).
-    #[allow(clippy::match_single_binding, unreachable_code)]
     async fn handle_configuration_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
+            0x0 => {
+                info!("Client configuration message");
+
+                let client_info = ClientInformation::deserialize(&mut packet.get_deserializer())?;
+
+                info!("Client info: {client_info:?}");
+            }
+            0x2 => {
+                info!("Received plugin message");
+
+                let plugin_message =
+                    ServerboundPluginMessage::deserialize(&mut packet.get_deserializer())?;
+
+                info!(
+                    "Message in channel: {} of length TODO",
+                    plugin_message.channel,
+                );
+            }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
                     packet_id: id,
