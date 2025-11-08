@@ -19,7 +19,6 @@ const MINECRAFT_RSA_KEY_SIZE: usize = 1024;
 
 impl KeyStore {
     /// Create a new [KeyStore], generating a new keyair in the process.
-    #[must_use]
     pub fn new() -> Result<Self, EncryptionError> {
         let mut rng = rand::thread_rng();
         let private_key = RsaPrivateKey::new(&mut rng, MINECRAFT_RSA_KEY_SIZE)?;
@@ -38,7 +37,7 @@ impl KeyStore {
     /// Decrypt the provided data.
     pub fn decrypt(&self, data: &[u8]) -> Result<Vec<u8>, EncryptionError> {
         self.private_key
-            .decrypt(Pkcs1v15Encrypt, &data)
-            .map_err(|err| EncryptionError::DecryptFailure(err))
+            .decrypt(Pkcs1v15Encrypt, data)
+            .map_err(EncryptionError::DecryptFailure)
     }
 }

@@ -49,7 +49,7 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
         let cipher =
             cfb8::Encryptor::<aes::Aes128>::new_from_slices(key, key).expect("invalid key");
 
-        self.encryption_key = Some(Encryption { cipher: cipher });
+        self.encryption_key = Some(Encryption { cipher });
 
         Ok(())
     }

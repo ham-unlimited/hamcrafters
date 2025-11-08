@@ -15,8 +15,7 @@ use mc_coms::{
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
         serverbound::{
-            handshaking::handshake::Handshake,
-            login::encryption_response::EncryptionResponse,
+            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
             status::ping_request::PingRequest,
         },
     },
@@ -183,7 +182,7 @@ impl<'key> ClientHandler<'key> {
                     .key_store
                     .decrypt(encryption_response.verify_token.inner())?;
 
-                if verify_token.as_slice() != &[b'h', b'a', b'm'] {
+                if verify_token.as_slice() != [b'h', b'a', b'm'] {
                     error!("Verify token incorrect!");
                     return Err(ClientError::InvalidVerifyToken);
                 } else {
@@ -222,6 +221,21 @@ impl<'key> ClientHandler<'key> {
                 });
             }
         }
+        Ok(())
+    }
+
+    // TODO: Remove (these are here because we will expand this function in the future).
+    #[allow(clippy::match_single_binding, unreachable_code)]
+    async fn handle_configuration_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
+        match packet.id {
+            id => {
+                return Err(ClientError::UnsupportedPacketId {
+                    packet_id: id,
+                    state: ClientState::Configuration,
+                });
+            }
+        }
+
         Ok(())
     }
 }

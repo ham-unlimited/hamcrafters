@@ -48,7 +48,7 @@ impl From<&NbtTagType> for Snbt {
                     .map(|b| format!("{}b", b.0))
                     .collect::<Vec<String>>();
                 let content = content.join(",");
-                Self(format!("[B;{}]", content))
+                Self(format!("[B;{content}]"))
             }
             NbtTagType::TagString(nbt_string) => Self(format!(r#""{}""#, nbt_string.0)),
             NbtTagType::TagList(nbt_list) => {
@@ -77,7 +77,7 @@ impl From<&NbtTagType> for Snbt {
                     .map(|i| i.0.to_string())
                     .collect::<Vec<String>>();
                 let content = content.join(",");
-                Self(format!("[I;{}]", content))
+                Self(format!("[I;{content}]"))
             }
             NbtTagType::TagLongArray(nbt_long_array) => {
                 let content = nbt_long_array
@@ -86,7 +86,7 @@ impl From<&NbtTagType> for Snbt {
                     .map(|b| format!("{}l", b.0))
                     .collect::<Vec<String>>();
                 let content = content.join(",");
-                Self(format!("[L;{}]", content))
+                Self(format!("[L;{content}]"))
             }
         }
     }

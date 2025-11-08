@@ -8,7 +8,6 @@ use serde::de::{
 use crate::{
     codec::var_int::VarInt,
     ser::{NetworkReadExt, ReadingError},
-    serial::PacketRead,
 };
 
 /// A deserializer for Minecraft packets.

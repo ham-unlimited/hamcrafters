@@ -27,7 +27,7 @@ async fn main() -> eyre::Result<()> {
             .await
             .wrap_err("Failed to receive incoming connection")?;
 
-        info!("Receiving connection from {:?}", addr);
+        info!("Receiving connection from {addr:?}");
 
         handle_connection(stream, &key_store)
             .await
@@ -58,7 +58,7 @@ async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
 async fn handle_connection(stream: TcpStream, key_store: &KeyStore) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    let mut handler = ClientHandler::new(stream, &key_store);
+    let mut handler = ClientHandler::new(stream, key_store);
 
     handler
         .run()
