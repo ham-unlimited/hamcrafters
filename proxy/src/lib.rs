@@ -68,7 +68,7 @@ impl ProxyHandler {
         let out_stream = TcpStream::connect(target)
             .await
             .map_err(ProxyError::FailedStartingServerComs)?;
-        info!("Connection setup to {}", target);
+        info!("Connection setup to {target}");
 
         let (server_reader, server_writer) = out_stream.into_split();
         let server_reader = NetworkReader::new(BufReader::new(server_reader));
