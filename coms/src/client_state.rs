@@ -10,4 +10,6 @@ pub enum ClientState {
     Login,
     /// Configuration state (after login).
     Configuration,
+    /// During gameplay.
+    Play,
 }

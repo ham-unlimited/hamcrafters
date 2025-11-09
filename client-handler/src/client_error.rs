@@ -1,6 +1,7 @@
 use mc_coms::{
     client_state::ClientState,
     key_store::EncryptionError,
+    messages::McPacketError,
     packet_reader::PacketReadError,
     packet_writer::PacketWriteError,
     ser::{ReadingError, WritingError},
@@ -37,4 +38,6 @@ pub enum ClientError {
     InvalidVerifyToken,
     #[error("Shared secret was invalid")]
     InvalidSharedSecret,
+    #[error("McPacket error, err: `{0}`")]
+    PacketError(#[from] McPacketError),
 }
