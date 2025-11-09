@@ -1,14 +1,37 @@
-use crate::McPacket;
+use std::io::{self, Cursor, Read};
+
+use crate::{
+    McPacket,
+    codec::var_int::VarInt,
+    messages::{McPacketError, McPacketRead},
+};
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
 /// A Minecraft serverbound plugin message packet.
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 #[mc_packet(0x2)]
-#[serde(rename_all = "PascalCase")]
 pub struct ServerboundPluginMessage {
     /// Name of the plugin channel used to send this message.
     pub channel: String, // TODO: Really an identifier
-                         // /// Data, depending on the channel.
-                         // pub data: Vec<u8>, // TODO: Byte array of max 32767 length (should be inferred from packet length?).
+    /// Remaining data.
+    pub data: Vec<u8>,
+}
+
+impl McPacketRead for ServerboundPluginMessage {
+    type Output = Self;
+
+    fn read(raw_packet: crate::packet_reader::RawPacket) -> Result<Self::Output, McPacketError> {
+        let mut cursor = Cursor::new(raw_packet.data);
+
+        let channel_length = VarInt::decode(&mut cursor)?;
+        let mut channel = vec![0; channel_length.0 as usize];
+        cursor.read_exact(&mut channel)?;
+        let channel = String::from_utf8(channel)?;
+
+        let mut data = Vec::new();
+        cursor.read_to_end(&mut data)?;
+
+        Ok(Self { channel, data })
+    }
 }
