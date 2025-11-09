@@ -7,7 +7,9 @@ use mc_coms::{
     codec::prefixed_array::PrefixedArray,
     key_store::KeyStore,
     messages::{
+        McPacketRead,
         clientbound::{
+            configuration::finish_configuration::FinishConfiguration,
             login::{
                 encryption_request::EncryptionRequest,
                 login_success::{GameProfile, LoginSuccess},
@@ -15,7 +17,12 @@ use mc_coms::{
             status::{pong_response::PongResponse, status_response::StatusResponse},
         },
         serverbound::{
-            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
+            configuration::{
+                client_information::ClientInformation,
+                serverbound_plugin_message::ServerboundPluginMessage,
+            },
+            handshaking::handshake::Handshake,
+            login::encryption_response::EncryptionResponse,
             status::ping_request::PingRequest,
         },
     },
@@ -75,6 +82,7 @@ impl<'key> ClientHandler<'key> {
                 ClientState::Status => self.handle_status_packet(packet).await?,
                 ClientState::Login => self.handle_login_packet(packet).await?,
                 ClientState::Configuration => self.handle_configuration_packet(packet).await?,
+                ClientState::Play => self.handle_play_packet(packet).await?,
             }
         }
     }
@@ -224,9 +232,55 @@ impl<'key> ClientHandler<'key> {
         Ok(())
     }
 
-    // TODO: Remove (these are here because we will expand this function in the future).
-    #[allow(clippy::match_single_binding, unreachable_code)]
     async fn handle_configuration_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
+        match packet.id {
+            0x0 => {
+                info!("Client configuration message");
+
+                let client_info = ClientInformation::deserialize(&mut packet.get_deserializer())?;
+
+                // TODO: Store this in the client_data probably.
+
+                info!("Client info: {client_info:?}");
+
+                info!("Responding with configuration completed");
+
+                self.network_writer
+                    .write_packet(FinishConfiguration)
+                    .await?;
+            }
+            0x2 => {
+                info!("Received plugin message");
+
+                let plugin_message = ServerboundPluginMessage::read(packet)?;
+
+                // TODO: Store this in the client_data probably.
+
+                info!(
+                    "Message in channel: {} with content: {}",
+                    plugin_message.channel,
+                    String::from_utf8_lossy(plugin_message.data.as_slice())
+                );
+            }
+            0x3 => {
+                info!("Received acknowledge for finish configuration, changing to state play");
+                self.state = ClientState::Play;
+
+                // TODO: Probably do something more here?
+            }
+            id => {
+                return Err(ClientError::UnsupportedPacketId {
+                    packet_id: id,
+                    state: ClientState::Configuration,
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    #[allow(unreachable_code, clippy::match_single_binding)] // TODO: remove when we have implemented stuff.
+    async fn handle_play_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
             id => {
                 return Err(ClientError::UnsupportedPacketId {
