@@ -12,26 +12,35 @@ use mc_coms::{
 use serde::Deserialize;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
-    net::TcpStream,
+    net::{
+        TcpStream,
+        tcp::{OwnedReadHalf, OwnedWriteHalf},
+    },
 };
 
 use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
-pub struct ClientHandler<S> {
-    stream: S,
+pub struct ClientHandler<R, W> {
+    reader: NetworkReader<R>,
+    writer: NetworkWriter<W>,
     state: ClientState,
 }
 
-impl<S> ClientHandler<S>
+impl<R, W> ClientHandler<R, W>
 where
-    S: AsyncRead + AsyncWrite + Send + Unpin,
+    R: AsyncRead + Unpin,
+    W: AsyncWrite + Unpin,
 {
-    /// Creates a new [ClientHandler] from the provided stream.
+    /// Creates a new [ClientHandler] from the provided read & write.
     #[must_use]
-    pub fn new(stream: S) -> Self {
+    pub fn new(read: R, write: W) -> Self {
+        let reader = NetworkReader::new(read);
+        let writer = NetworkWriter::new(write);
+
         Self {
-            stream,
+            reader,
+            writer,
             state: ClientState::Handshaking,
         }
     }
@@ -55,19 +64,18 @@ where
         }
     }
 
+    #[inline(always)]
     async fn read_packet(&mut self) -> Result<RawPacket, PacketReadError> {
-        let mut reader = NetworkReader::new(&mut self.stream);
-        reader.get_packet().await
+        self.reader.get_packet().await
     }
 
+    #[inline(always)]
     async fn write_packet<P: mc_coms::messages::McPacket + serde::Serialize>(
         &mut self,
         packet: P,
     ) -> Result<(), mc_coms::packet_writer::PacketWriteError> {
-        let mut writer = NetworkWriter::new(&mut self.stream);
-        writer.write_packet(packet).await
+        self.writer.write_packet(packet).await
     }
-
     fn handle_handshake_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
             0x0 => {
@@ -140,10 +148,11 @@ where
 }
 
 // Keep backward compatibility with TcpStream
-impl ClientHandler<TcpStream> {
+impl ClientHandler<OwnedReadHalf, OwnedWriteHalf> {
     /// Creates a new [ClientHandler] from a [TcpStream].
     #[must_use]
     pub fn new_tcp(stream: TcpStream) -> Self {
-        Self::new(stream)
+        let (read, write) = stream.into_split();
+        Self::new(read, write)
     }
 }

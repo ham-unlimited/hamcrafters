@@ -19,7 +19,9 @@ fn test_successful_handshake() {
             .await
             .expect("Failed to accept connection");
 
-        let mut handler = ClientHandler::new(stream);
+        let (read, write) = stream.into_split();
+
+        let mut handler = ClientHandler::new(read, write);
 
         // Run the handler - it should handle the handshake packet successfully
         // The handler will return Ok(()) when the connection is closed cleanly

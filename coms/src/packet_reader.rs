@@ -24,7 +24,7 @@ pub enum PacketReadError {
 }
 
 /// Reader for reading packets from the network based on the underlying [reader].
-pub struct NetworkReader<R: AsyncRead + Unpin> {
+pub struct NetworkReader<R> {
     reader: R,
 }
 

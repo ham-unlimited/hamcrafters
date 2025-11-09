@@ -25,7 +25,7 @@ pub enum PacketWriteError {
 }
 
 /// A writing for writing packets to the network.
-pub struct NetworkWriter<W: AsyncWrite + Unpin> {
+pub struct NetworkWriter<W> {
     writer: W,
 }
 
