@@ -39,11 +39,10 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::{client_data::ClientData, client_error::ClientError};
+use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
 pub struct ClientHandler<'key> {
-    data: ClientData,
     state: ClientState,
     key_store: &'key KeyStore,
     network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
@@ -61,7 +60,6 @@ impl<'key> ClientHandler<'key> {
 
         Self {
             state: ClientState::Handshaking,
-            data: ClientData {},
             key_store,
             network_reader: reader,
             network_writer: writer,
@@ -281,6 +279,7 @@ impl<'key> ClientHandler<'key> {
         Ok(())
     }
 
+    #[allow(unreachable_code, clippy::match_single_binding)] // TODO: remove when we have implemented stuff.
     async fn handle_play_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
             id => {
@@ -291,7 +290,6 @@ impl<'key> ClientHandler<'key> {
             }
         }
 
-        #[allow(unreachable_code)]
         Ok(())
     }
 }
