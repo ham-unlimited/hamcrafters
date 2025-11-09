@@ -7,7 +7,9 @@ use mc_coms::{
     codec::prefixed_array::PrefixedArray,
     key_store::KeyStore,
     messages::{
+        McPacketRead,
         clientbound::{
+            configuration::finish_configuration::FinishConfiguration,
             login::{
                 encryption_request::EncryptionRequest,
                 login_success::{GameProfile, LoginSuccess},
@@ -37,10 +39,11 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::client_error::ClientError;
+use crate::{client_data::ClientData, client_error::ClientError};
 
 /// Handles communication between the server and a specific Minecraft client.
 pub struct ClientHandler<'key> {
+    data: ClientData,
     state: ClientState,
     key_store: &'key KeyStore,
     network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
@@ -58,6 +61,7 @@ impl<'key> ClientHandler<'key> {
 
         Self {
             state: ClientState::Handshaking,
+            data: ClientData {},
             key_store,
             network_reader: reader,
             network_writer: writer,
@@ -80,6 +84,7 @@ impl<'key> ClientHandler<'key> {
                 ClientState::Status => self.handle_status_packet(packet).await?,
                 ClientState::Login => self.handle_login_packet(packet).await?,
                 ClientState::Configuration => self.handle_configuration_packet(packet).await?,
+                ClientState::Play => self.handle_play_packet(packet).await?,
             }
         }
     }
@@ -236,18 +241,34 @@ impl<'key> ClientHandler<'key> {
 
                 let client_info = ClientInformation::deserialize(&mut packet.get_deserializer())?;
 
+                // TODO: Store this in the client_data probably.
+
                 info!("Client info: {client_info:?}");
+
+                info!("Responding with configuration completed");
+
+                self.network_writer
+                    .write_packet(FinishConfiguration)
+                    .await?;
             }
             0x2 => {
                 info!("Received plugin message");
 
-                let plugin_message =
-                    ServerboundPluginMessage::deserialize(&mut packet.get_deserializer())?;
+                let plugin_message = ServerboundPluginMessage::read(packet)?;
+
+                // TODO: Store this in the client_data probably.
 
                 info!(
-                    "Message in channel: {} of length TODO",
+                    "Message in channel: {} with content: {}",
                     plugin_message.channel,
+                    String::from_utf8_lossy(plugin_message.data.as_slice())
                 );
+            }
+            0x3 => {
+                info!("Received acknowledge for finish configuration, changing to state play");
+                self.state = ClientState::Play;
+
+                // TODO: Probably do something more here?
             }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
@@ -257,6 +278,20 @@ impl<'key> ClientHandler<'key> {
             }
         }
 
+        Ok(())
+    }
+
+    async fn handle_play_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
+        match packet.id {
+            id => {
+                return Err(ClientError::UnsupportedPacketId {
+                    packet_id: id,
+                    state: ClientState::Configuration,
+                });
+            }
+        }
+
+        #[allow(unreachable_code)]
         Ok(())
     }
 }
