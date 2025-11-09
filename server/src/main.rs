@@ -54,7 +54,7 @@ async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
 async fn handle_connection(stream: TcpStream) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    let mut handler = ClientHandler::new(stream);
+    let mut handler = ClientHandler::new_tcp(stream);
     handler
         .run()
         .await
