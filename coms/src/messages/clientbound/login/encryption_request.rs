@@ -14,7 +14,7 @@ pub struct EncryptionRequest {
     pub public_key: PrefixedArray<u8>,
     /// A verification token to ensure that the [EncryptionResponse] is correctly encrypted.
     pub verify_token: PrefixedArray<u8>,
-    /// Weather the client (and server) should validate the session against Mojang servers.
+    /// Whether the client (and server) should validate the session against Mojang servers.
     pub should_authenticate: bool,
 }
 
