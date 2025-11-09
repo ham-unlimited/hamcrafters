@@ -1,11 +1,11 @@
 use crate::McPacket;
 use mc_packet_macros::mc_packet;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::codec::var_int::VarInt;
 
 /// A Minecraft Handshake packet.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[mc_packet(0x0)]
 pub struct Handshake {
     /// The protocol version of the client requesting the handshake.

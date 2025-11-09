@@ -5,7 +5,7 @@ use std::{
 };
 
 use serde::{
-    Deserialize, Deserializer,
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{SeqAccess, Visitor},
 };
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -156,21 +156,26 @@ impl Deref for VarInt {
     }
 }
 
-// impl Serialize for VarInt {
-//     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-//         let mut value = self.0 as u32;
-//         let mut buf = Vec::new();
-
-//         while value > 0x7F {
-//             buf.put_u8(value as u8 | 0x80);
-//             value >>= 7;
-//         }
-
-//         buf.put_u8(value as u8);
-
-//         serializer.serialize_bytes(&buf)
-//     }
-// }
+impl Serialize for VarInt {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeSeq;
+        let size = self.written_size();
+        let mut seq = serializer.serialize_seq(Some(size))?;
+        
+        let mut val = self.0;
+        for _ in 0..size {
+            let b: u8 = val as u8 & 0x7F;
+            val >>= 7;
+            if val == 0 {
+                seq.serialize_element(&b)?;
+                break;
+            } else {
+                seq.serialize_element(&(b | 0x80))?;
+            }
+        }
+        seq.end()
+    }
+}
 
 impl<'de> Deserialize<'de> for VarInt {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {

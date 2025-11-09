@@ -10,9 +10,9 @@ tokio = { workspace = true }
 log = { workspace = true } 
 proxy = { workspace = true, optional = true }
 client-handler = { workspace = true, optional = true }
+color-eyre = { workspace = true }
+eyre = { workspace = true }
 chrono = "0.4.42"
-color-eyre = "0.6.5"
-eyre = "0.6.12"
 pretty_env_logger = "0.5.0"
 dotenvy = "0.15.7"
 

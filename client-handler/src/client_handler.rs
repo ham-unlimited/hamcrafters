@@ -11,42 +11,35 @@ use mc_coms::{
 };
 use serde::Deserialize;
 use tokio::{
-    io::{BufReader, BufWriter},
-    net::{
-        TcpStream,
-        tcp::{OwnedReadHalf, OwnedWriteHalf},
-    },
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
 };
 
 use crate::client_error::ClientError;
 
 /// Handles communication between the server and a specific Minecraft client.
-pub struct ClientHandler {
-    reader: NetworkReader<BufReader<OwnedReadHalf>>,
+pub struct ClientHandler<S> {
+    stream: S,
     state: ClientState,
-    network_writer: NetworkWriter<BufWriter<OwnedWriteHalf>>,
 }
 
-impl ClientHandler {
-    /// Creates a new [ClientHandler] from the provided [TcpStream].
+impl<S> ClientHandler<S>
+where
+    S: AsyncRead + AsyncWrite + Send + Unpin,
+{
+    /// Creates a new [ClientHandler] from the provided stream.
     #[must_use]
-    pub fn new(stream: TcpStream) -> Self {
-        let (r, w) = stream.into_split();
-
-        let reader = NetworkReader::new(BufReader::new(r));
-        let writer = NetworkWriter::new(BufWriter::new(w));
-
+    pub fn new(stream: S) -> Self {
         Self {
-            reader,
+            stream,
             state: ClientState::Handshaking,
-            network_writer: writer,
         }
     }
 
     /// Starts listening for & handling packets from the server.
     pub async fn run(&mut self) -> Result<(), ClientError> {
         loop {
-            let packet = match self.reader.get_packet().await {
+            let packet = match self.read_packet().await {
                 Ok(p) => p,
                 Err(PacketReadError::ConnectionClosed) => return Ok(()),
                 Err(err) => return Err(err.into()),
@@ -60,6 +53,19 @@ impl ClientHandler {
                 ClientState::Login => todo!("Login not yet supported"),
             }
         }
+    }
+
+    async fn read_packet(&mut self) -> Result<RawPacket, PacketReadError> {
+        let mut reader = NetworkReader::new(&mut self.stream);
+        reader.get_packet().await
+    }
+
+    async fn write_packet<P: mc_coms::messages::McPacket + serde::Serialize>(
+        &mut self,
+        packet: P,
+    ) -> Result<(), mc_coms::packet_writer::PacketWriteError> {
+        let mut writer = NetworkWriter::new(&mut self.stream);
+        writer.write_packet(packet).await
     }
 
     fn handle_handshake_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
@@ -107,7 +113,7 @@ impl ClientHandler {
 
                 info!("Status response: {status_response:?}");
 
-                self.network_writer.write_packet(status_response).await?;
+                self.write_packet(status_response).await?;
 
                 info!("Responded to status request");
             }
@@ -118,7 +124,7 @@ impl ClientHandler {
 
                 let pong_response: PongResponse = ping_request.into();
 
-                self.network_writer.write_packet(pong_response).await?;
+                self.write_packet(pong_response).await?;
 
                 info!("Responded to ping request")
             }
@@ -130,5 +136,14 @@ impl ClientHandler {
             }
         }
         Ok(())
+    }
+}
+
+// Keep backward compatibility with TcpStream
+impl ClientHandler<TcpStream> {
+    /// Creates a new [ClientHandler] from a [TcpStream].
+    #[must_use]
+    pub fn new_tcp(stream: TcpStream) -> Self {
+        Self::new(stream)
     }
 }

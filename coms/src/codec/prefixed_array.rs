@@ -1,5 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde::de::{self, Deserializer, SeqAccess, Visitor};
+use serde::ser::{SerializeSeq, Serializer};
 use std::fmt;
 
 use crate::codec::var_int::VarInt;
@@ -7,6 +8,29 @@ use crate::codec::var_int::VarInt;
 /// An array with a varint length to be parsed
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PrefixedArray<T>(Vec<T>);
+
+impl<T> Serialize for PrefixedArray<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let length = self.0.len();
+        let mut seq = serializer.serialize_seq(Some(length + 1))?;
+        
+        // Serialize length as VarInt
+        seq.serialize_element(&VarInt(length as i32))?;
+        
+        // Serialize each element
+        for item in &self.0 {
+            seq.serialize_element(item)?;
+        }
+        
+        seq.end()
+    }
+}
 
 impl<'de, T> Deserialize<'de> for PrefixedArray<T>
 where

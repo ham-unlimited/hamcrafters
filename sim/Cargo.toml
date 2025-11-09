@@ -1,0 +1,28 @@
+[package]
+name = "sim"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Simulation framework - latest version is 0.7.0
+turmoil = "0.7"
+
+# Your existing workspace crates following the same pattern as other subprojects
+mc-server-rs = { path = "../server" }
+client-handler = { workspace = true }
+mc-coms = { workspace = true }
+
+# Workspace dependencies (same pattern as other subprojects)
+tokio = { workspace = true }
+log = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+
+# Additional dependencies for testing
+eyre =  { workspace = true }
+color-eyre = { workspace = true }
+
+[[test]]
+name = "basic_simulation"
+path = "tests/basic_simulation.rs"
+
