@@ -56,15 +56,7 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
-                log::info!("LENGTH {length:?}");
-
                 let mut items = Vec::with_capacity(length.0 as usize);
-
-                // let mut items = Vec::new();
-
-                // while let Some(item) = seq.next_element()? {
-                //     items.push(item);
-                // }
 
                 for i in 0..length.0 {
                     let item: T = seq
