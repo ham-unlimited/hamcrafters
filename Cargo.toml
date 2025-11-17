@@ -16,3 +16,4 @@ bytes = "1.10"
 log = "0.4.28"
 aes = "0.8"
 cfb8 = "0.8"
+rand = "0.8" # We need 0.8 to be compatible with rsa's dependency on rand_core.

@@ -14,12 +14,22 @@ impl<T> PrefixedArray<T> {
     pub fn inner(&self) -> &Vec<T> {
         &self.0
     }
+
+    /// Takes ownership of the contained vector.
+    pub fn take_inner(self) -> Vec<T> {
+        self.0
+    }
 }
 
 impl<T> PrefixedArray<T> {
     /// Create a new empty [PrefixedArray].
     pub fn empty() -> Self {
         Self(vec![])
+    }
+
+    /// Create a new [PrefixedArray] containing the provided data.
+    pub fn new(data: Vec<T>) -> Self {
+        Self(data)
     }
 }
 

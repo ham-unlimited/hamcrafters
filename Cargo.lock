@@ -815,6 +815,7 @@ version = "0.1.0"
 dependencies = [
  "log",
  "mc-coms",
+ "rand",
  "serde",
  "thiserror",
  "tokio",
