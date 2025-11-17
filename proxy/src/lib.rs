@@ -3,7 +3,10 @@
 
 //! Crate for handling proxying to another Minecraft server.
 
-use std::io::{self, Cursor};
+use std::{
+    io::{self, Cursor},
+    str::FromStr,
+};
 
 use log::{error, info, warn};
 use mc_coms::{
@@ -12,7 +15,10 @@ use mc_coms::{
     key_store::{EncryptionError, KeyStore},
     messages::{
         clientbound::{
-            login::encryption_request::EncryptionRequest,
+            login::{
+                encryption_request::EncryptionRequest,
+                login_success::{GameProfile, LoginSuccess},
+            },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
         serverbound::{
@@ -33,6 +39,7 @@ use tokio::{
         tcp::{OwnedReadHalf, OwnedWriteHalf},
     },
 };
+use uuid::Uuid;
 
 /// An error that occurrs during proxying.
 #[allow(missing_docs)]
@@ -54,6 +61,8 @@ pub enum ProxyError {
     PacketWriteError(#[from] PacketWriteError),
     #[error("An encryption error occurred, err: {0}")]
     EncryptionError(#[from] EncryptionError),
+    #[error("UUID parse error")]
+    UuidError(#[from] uuid::Error),
 }
 
 /// Handling connection for the proxy.
@@ -111,11 +120,17 @@ impl<'key> ProxyHandler<'key> {
                     };
 
                     info!("Packet to server {packet:02x?}");
-                    if let Err(err) = self.parse_and_log_server_bound_packet(packet.clone()) {
-                        error!("Failed to parse&log server-bound packet, err: {err:?}");
-                    }
 
-                    send_raw_packet(&mut self.server_writer, &packet).await?;
+                    match self.parse_and_log_server_bound_packet(packet.clone()).await {
+                        Ok(true) => { /* The server has been dealt with */ }
+                        Ok(false) => {
+                            send_raw_packet(&mut self.server_writer, &packet).await?;
+                        }
+                        Err(err) => {
+                            error!("Failed to parse & log server-bound packet, err: {err:?}");
+                            send_raw_packet(&mut self.server_writer, &packet).await?;
+                        }
+                    }
                 }
                 to_client = self.server_reader.get_packet() => {
                     let packet = match to_client {
@@ -133,7 +148,7 @@ impl<'key> ProxyHandler<'key> {
                             send_raw_packet(&mut self.client_writer, &packet).await?;
                         }
                         Err(err) => {
-                            error!("Failed to parse&log client-bound packet, err: {err:?}");
+                            error!("Failed to parse & log client-bound packet, err: {err:?}");
                             send_raw_packet(&mut self.client_writer, &packet).await?;
                         }
                     }
@@ -142,7 +157,10 @@ impl<'key> ProxyHandler<'key> {
         }
     }
 
-    fn parse_and_log_server_bound_packet(&mut self, packet: RawPacket) -> Result<bool, ProxyError> {
+    async fn parse_and_log_server_bound_packet(
+        &mut self,
+        packet: RawPacket,
+    ) -> Result<bool, ProxyError> {
         info!(
             "Server-bound packet with ID {} in state {:?}",
             packet.id, self.state
@@ -157,7 +175,7 @@ impl<'key> ProxyHandler<'key> {
                     2 => ClientState::Login,
                     s => {
                         warn!("Unsupported state requested {s}");
-                        return Ok(());
+                        return Ok(false);
                     }
                 };
             }
@@ -184,17 +202,18 @@ impl<'key> ProxyHandler<'key> {
 
                 if verify_token.as_slice() != [b'h', b'a', b'm'] {
                     error!("Verify token incorrect!");
-                    return Err();
+                    return Err(ProxyError::InvalidPacket);
                 } else {
                     info!("Verify token correct")
                 }
 
                 let shared_secret: [u8; 16] = shared_secret
                     .try_into()
-                    .map_err(|_| ClientError::InvalidSharedSecret)?;
+                    .map_err(|_| ProxyError::InvalidPacket)?;
 
-                self.network_writer.enable_encryption(&shared_secret)?;
-                self.network_reader.enable_encryption(&shared_secret)?;
+                info!("Enabling client encryption");
+                self.client_reader.enable_encryption(&shared_secret)?;
+                self.client_writer.enable_encryption(&shared_secret)?;
 
                 let id = Uuid::from_str("00002a4a-0000-1000-8000-00805f9b34fb")?;
 
@@ -207,15 +226,18 @@ impl<'key> ProxyHandler<'key> {
                 };
 
                 info!("Responding with login success");
+                self.client_writer.write_packet(login_success).await?;
 
-                self.network_writer.write_packet(login_success).await?;
+                // TODO: Handle server encryption.
+
+                return Ok(true);
             }
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in server-bound packets");
             }
         }
 
-        Ok(())
+        Ok(false)
     }
 
     async fn parse_and_log_client_bound_packet(
@@ -268,6 +290,7 @@ impl<'key> ProxyHandler<'key> {
                 info!("Responding to encryption request");
                 self.server_writer.write_packet(encryption_response).await?;
 
+                info!("Enabling server encryption");
                 self.server_writer.enable_encryption(&secret)?;
                 self.server_reader.enable_encryption(&secret)?;
 
