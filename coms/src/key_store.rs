@@ -1,4 +1,5 @@
-use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, traits::PublicKeyParts};
+use rand::Rng;
+use rsa::{BigUint, Pkcs1v15Encrypt, RsaPrivateKey, traits::PublicKeyParts};
 
 /// Encryption errors.
 #[allow(missing_docs)]
@@ -8,6 +9,8 @@ pub enum EncryptionError {
     PrivateKeyGenFailure(#[from] rsa::Error),
     #[error("Failed to decrypt data, err: {0}")]
     DecryptFailure(rsa::Error),
+    #[error("Failed to parse public key der, err: {0}")]
+    PublicKeyParseError(#[from] rsa_der::Error),
 }
 
 /// A keystore for keeping minecraft encryption keys.
@@ -24,6 +27,20 @@ impl KeyStore {
         let private_key = RsaPrivateKey::new(&mut rng, MINECRAFT_RSA_KEY_SIZE)?;
 
         Ok(Self { private_key })
+    }
+
+    /// Encrypts the provided [data] using the provided [pub_key_der].
+    pub fn encrypt(pub_key_der: &[u8], data: Vec<u8>) -> Result<Vec<u8>, EncryptionError> {
+        let (n, e) = rsa_der::public_key_from_der(pub_key_der)?;
+        let pub_key = rsa::RsaPublicKey::new(
+            BigUint::from_bytes_be(n.as_slice()), // TODO: Not sure about be here
+            BigUint::from_bytes_be(e.as_slice()),
+        )?;
+
+        let encrypted =
+            pub_key.encrypt(&mut rand::thread_rng(), Pkcs1v15Encrypt, data.as_slice())?;
+
+        Ok(encrypted)
     }
 
     /// Get a copy of the public key in der format.
