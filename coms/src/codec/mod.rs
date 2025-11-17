@@ -1,5 +1,7 @@
 /// A JsonString.
 pub mod json_string;
+/// UUID type with support for the minecraft serialization/deserialization.
+pub mod mc_uuid;
 /// Implementation of the minecraft Prefixed Array
 pub mod prefixed_array;
 /// Implementation of the minecraft Prefixed Optional

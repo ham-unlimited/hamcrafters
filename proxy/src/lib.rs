@@ -14,6 +14,7 @@ use mc_coms::{
     codec::{json_string::JsonString, prefixed_array::PrefixedArray, var_int::VarInt},
     key_store::{EncryptionError, KeyStore},
     messages::{
+        McPacketError, McPacketRead,
         clientbound::{
             login::{
                 encryption_request::EncryptionRequest,
@@ -22,7 +23,12 @@ use mc_coms::{
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
         serverbound::{
-            handshaking::handshake::Handshake, login::encryption_response::EncryptionResponse,
+            configuration::{
+                client_information::ClientInformation,
+                serverbound_plugin_message::ServerboundPluginMessage,
+            },
+            handshaking::handshake::Handshake,
+            login::{encryption_response::EncryptionResponse, login_start::LoginStart},
             status::ping_request::PingRequest,
         },
     },
@@ -63,6 +69,8 @@ pub enum ProxyError {
     EncryptionError(#[from] EncryptionError),
     #[error("UUID parse error")]
     UuidError(#[from] uuid::Error),
+    #[error("MC Packet Error: {0}")]
+    McPacketError(#[from] McPacketError),
 }
 
 /// Handling connection for the proxy.
@@ -187,6 +195,11 @@ impl<'key> ProxyHandler<'key> {
                 let ping_request = PingRequest::deserialize(&mut packet.get_deserializer())?;
                 info!("Ping request content: {ping_request:?}");
             }
+            (&ClientState::Login, 0x0) => {
+                info!("Login start");
+                let login_start = LoginStart::deserialize(&mut packet.get_deserializer())?;
+                info!("Login start: {login_start:?}");
+            }
             (&ClientState::Login, 0x1) => {
                 // Finalize client encryption
                 let encryption_response =
@@ -219,7 +232,7 @@ impl<'key> ProxyHandler<'key> {
 
                 let login_success = LoginSuccess {
                     profile: GameProfile {
-                        uuid: id,
+                        uuid: id.into(),
                         username: "Pepe".into(),
                         properties: PrefixedArray::empty(),
                     },
@@ -228,9 +241,22 @@ impl<'key> ProxyHandler<'key> {
                 info!("Responding with login success");
                 self.client_writer.write_packet(login_success).await?;
 
-                // TODO: Handle server encryption.
-
                 return Ok(true);
+            }
+            (&ClientState::Login, 0x3) => {
+                info!("Login success");
+                self.state = ClientState::Configuration;
+            }
+            (&ClientState::Configuration, 0x0) => {
+                info!("Client information");
+                let client_info = ClientInformation::deserialize(&mut packet.get_deserializer())?;
+                info!("Client info: {client_info:?}");
+            }
+            (&ClientState::Configuration, 0x2) => {
+                info!("Plugin message");
+                let plugin_message = ServerboundPluginMessage::read(packet)?;
+
+                info!("Plugin message: {plugin_message:?}");
             }
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in server-bound packets");
@@ -303,6 +329,11 @@ impl<'key> ProxyHandler<'key> {
                     .await?;
 
                 return Ok(true);
+            }
+            (&ClientState::Configuration, 0x0) => {
+                info!("Cookie request");
+                let key = String::deserialize(&mut packet.get_deserializer())?;
+                info!("Cookie request key: \"{key}\"");
             }
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in client-bound packets");

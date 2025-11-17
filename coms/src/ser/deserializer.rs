@@ -107,7 +107,6 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
         let s = VarInt::decode(&mut self.inner)
             .map_err(|err| ReadingError::Incomplete(err.to_string()))?; // TODO: Error?
 
-        log::info!("Got string of length {s:?} {}", s.0);
         let mut buf = vec![0; s.0 as usize];
         self.inner
             .read(&mut buf)
