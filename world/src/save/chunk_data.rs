@@ -1,9 +1,8 @@
 use std::io::Read;
 
 use log::warn;
-use nbt::{
-    nbt_named_tag::NbtNamedTag, nbt_value::nbt_value::NbtValue, ser::deserializer::Deserializer,
-};
+use nbt::nbt_value::value::NbtValue;
+use nbt::{nbt_named_tag::NbtNamedTag, ser::deserializer::Deserializer};
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, de::Visitor};
 
@@ -12,6 +11,7 @@ use crate::save::anvil::{AnvilError, AnvilResult};
 // Information taken from here: https://minecraft.fandom.com/wiki/Chunk_format
 // Although we should probably also consider this page: https://minecraft.fandom.com/wiki/Anvil_file_format
 // TODO: Implement those that are still NbtValues.
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 pub struct ChunkData {
     #[serde(rename = "DataVersion")]
@@ -54,6 +54,7 @@ impl ChunkData {
 
 /// A section in Minecraft (also known as a sub-chunk), it covers the same 16x16 area but only 16 blocks tall so a total of 4096 blocks.
 /// This means that there are (currently) 24 subchunks per chunk in the overworld of Minecraft.
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 pub struct Section {
     #[serde(rename = "Y")]
@@ -66,12 +67,14 @@ pub struct Section {
     sky_light: Option<Vec<i8>>, // Always 2048 long but serde only supports arrays of length 0..=32 (each half-byte is one block). If omitted we should look at the section right above it.
 }
 
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 pub struct BlockStates {
     palette: Vec<Block>, // Up to 4096 long in vanilla, longer are supported for other servers / clients.
     data: Option<Vec<i64>>, // Always 4096 long, points to indices in the palette vector for each block of the section. Omitted if a single blockstate is used for the entire section.
 }
 
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Block {
@@ -79,6 +82,7 @@ pub struct Block {
     properties: Option<PropertiesList>,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 struct PropertiesList(Vec<BlockState>);
 
@@ -157,6 +161,7 @@ pub enum Direction {
 }
 
 /// A stringified boolean, because sometimes minecraft decides to put booleans in Strings :facepalm:
+#[allow(unused)]
 #[derive(Debug)]
 pub struct SBool(bool);
 
@@ -177,6 +182,7 @@ impl<'de> Deserialize<'de> for SBool {
 }
 
 /// A stringified i32, because sometimes minecraft decides to put integers in Strings :facepalm:
+#[allow(unused)]
 #[derive(Debug)]
 pub struct SI32(i32);
 
@@ -241,7 +247,6 @@ impl<'de> Visitor<'de> for PropertiesVisitor {
                     warn!(
                         "Failed to deserialize property: {{{field}: {value}}} converting to 'Unsupported', err: {err}"
                     );
-                    panic!("ASD");
                     BlockState::Unsupported {
                         name: field,
                         value: value.to_string(),
@@ -264,6 +269,7 @@ impl<'de> Deserialize<'de> for PropertiesList {
     }
 }
 
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 struct Biomes {
     palette: Vec<String>, // Will never contain more than 64 entries in vanilla but larger are supported.

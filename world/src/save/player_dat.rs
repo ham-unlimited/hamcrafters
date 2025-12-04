@@ -1,5 +1,6 @@
 use serde::Deserialize;
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 pub struct PlayerDat {
     /* Common to all entities */
@@ -61,6 +62,7 @@ pub struct PlayerDat {
 }
 
 /// Tags common between all entities.
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Entity {
     #[serde(rename = "Air")]
@@ -96,6 +98,7 @@ struct Entity {
 }
 
 /// Tags common between all entities.
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Mob {
     // TODO: From wiki but "Tags for all mobs, except HandItems, ArmorItems, HandDropChances, ArmorDropChances, CanPickUpLoot, PersistenceRequired and Leash"
@@ -128,6 +131,7 @@ struct Mob {
     // TODO: Team?
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct PotionEffect {
     ambient: bool,
@@ -141,12 +145,14 @@ struct PotionEffect {
 
 /// Tags common for all Items.
 // TODO: tag, slot
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Item {
     count: i8,
     id: Option<String>, // If not specified => change to stone?
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Attribute {
     name: String,
@@ -154,6 +160,7 @@ struct Attribute {
     modifiers: Vec<Modifier>,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Modifier {
     amount: f64,
@@ -162,6 +169,7 @@ struct Modifier {
     uuid: [i32; 4], // TODO: UUID
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct Brain {
     // TODO: Memories: "Empty for all but allays, axolotls, frogs, goats, piglins, villagers, and wardens"
@@ -169,21 +177,24 @@ struct Brain {
     memories: Memories,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 // TODO: Memories...
 struct Memories {}
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum Leash {
     #[serde(rename_all = "PascalCase")]
     FencePost { i: i32, y: i32, z: i32 },
-    #[serde(rename_all = "PascalCase")]
-    UUID {
+    #[serde(rename = "Uuid", rename_all = "PascalCase")]
+    Uuid {
         uuid: [i32; 4], // TOOD: UUID
     },
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Abilities {
@@ -197,6 +208,7 @@ struct Abilities {
     walk_speed: f32, // Always 0.1
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct NeatherPosition {
     x: f64,
@@ -204,12 +216,14 @@ struct NeatherPosition {
     z: f64,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct DeathLocation {
     dimnension: String,
     pos: [i32; 3],
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 struct WardenSpawnTracker {
     cooldown_ticks: i32,
