@@ -200,6 +200,7 @@ mod test {
 
     use crate::save::level_dat::MinecraftLevelDat;
 
+    #[ignore = "Doesn't work in pipeline as files aren't commited"]
     #[test]
     fn test_deserialize_level_dat() {
         let Some(nbt) = read_nbt_file(Path::new("../test-data/test-world/level.dat"))
