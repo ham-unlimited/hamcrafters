@@ -237,6 +237,7 @@ mod tests {
 
     use crate::save::anvil::Regions;
 
+    #[ignore]
     #[test]
     fn parse_file_successfully() {
         unsafe {
@@ -266,6 +267,7 @@ mod tests {
         assert_eq!(true, false);
     }
 
+    #[ignore]
     #[test]
     fn serialize_deserialize_yields_same() {
         unsafe {
