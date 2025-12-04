@@ -8,7 +8,7 @@ use tokio::net::TcpStream;
 async fn main() -> eyre::Result<()> {
     dotenvy::dotenv().wrap_err("Failed to read dotenv")?;
     color_eyre::install()?;
-    pretty_env_logger::init();
+    pretty_env_logger::init_timed();
 
     let host = "127.0.0.1:22211";
     let listener = TcpListener::bind(host)

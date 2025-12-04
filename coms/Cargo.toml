@@ -12,6 +12,7 @@ mc-packet-macros = { workspace = true }
 bytes = { workspace = true } 
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
+owo-colors = { workspace = true }
 
 # Encryption
 aes = { workspace = true }

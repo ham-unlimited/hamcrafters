@@ -11,3 +11,4 @@ log = { workspace = true }
 serde = { workspace = true }
 rand = { workspace = true }
 uuid = { workspace = true }
+owo-colors = { workspace = true }

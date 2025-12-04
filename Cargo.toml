@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt", "world"]
+members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt", "world", "auth"]
 
 [workspace.dependencies]
 mc-coms = { path = "./coms" }
@@ -20,3 +20,4 @@ aes = "0.8"
 pretty_env_logger = "0.5.0"
 cfb8 = "0.8"
 rand = "0.8" # We need 0.8 to be compatible with rsa's dependency on rand_core.
+owo-colors = "4.2.3"
