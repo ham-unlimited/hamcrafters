@@ -41,7 +41,7 @@ impl Display for NbtValue {
             NbtValue::Compound(hash_map) => {
                 let vs = hash_map
                     .iter()
-                    .map(|(a, b)| format!("\"{a}\": {}", b.to_string()))
+                    .map(|(a, b)| format!("\"{a}\": {}", b))
                     .collect::<Vec<_>>();
                 format!("{{{}}}", vs.join(", "))
             }

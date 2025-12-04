@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, de::Visitor};
 
-use crate::{
-    nbt_types::{NbtByte, NbtByteArray, NbtDouble, NbtFloat, NbtInt, NbtLong, NbtShort, NbtString},
-    nbt_value::nbt_value::NbtValue,
-};
+use crate::nbt_value::value::NbtValue;
 
 struct NbtValueVisitor;
 
@@ -118,9 +115,7 @@ impl<'de> Visitor<'de> for NbtValueVisitor {
     where
         E: serde::de::Error,
     {
-        Ok(NbtValue::ByteArray(
-            v.into_iter().map(|b| *b as i8).collect(),
-        ))
+        Ok(NbtValue::ByteArray(v.iter().map(|b| *b as i8).collect()))
     }
 
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>

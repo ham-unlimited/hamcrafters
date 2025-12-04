@@ -5,7 +5,7 @@ pub mod deserialize;
 /// Deserializer implementation for NbtValue.
 pub mod deserializer;
 /// The actual NbtValue type.
-pub mod nbt_value;
+pub mod value;
 
 /// Macro for handling cases that are not supported by the deserializer & serializer.
 #[macro_export]
@@ -27,12 +27,12 @@ pub enum NbtValueError {
 
 impl Display for NbtValueError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("{}", match self {
+        f.write_str(&match self {
             NbtValueError::SerdeCustom(c) => format!("custom: {c}"),
             NbtValueError::Unexpected(u) => format!("unexpected: {u}"),
             NbtValueError::Unsupported(u) => format!("unsupported: {u}"),
-            NbtValueError::KeyWithoutValue => format!("Key without value"),
-        }))
+            NbtValueError::KeyWithoutValue => "Key without value".to_string(),
+        })
     }
 }
 

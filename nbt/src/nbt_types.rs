@@ -257,7 +257,7 @@ impl NbtType for NbtLongArray {
 
 impl Display for NbtTagType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("{}", match self {
+        f.write_str(&match self {
             NbtTagType::TagEnd => "".to_string(),
             NbtTagType::TagByte(nbt_byte) => nbt_byte.0.to_string(),
             NbtTagType::TagShort(nbt_short) => nbt_short.0.to_string(),
@@ -278,7 +278,7 @@ impl Display for NbtTagType {
                 let s: Vec<String> = nbt_compound
                     .0
                     .iter()
-                    .map(|tag| format!("{}: {}", tag.name.0.clone(), tag.payload.to_string()))
+                    .map(|tag| format!("{}: {}", tag.name.0.clone(), tag.payload))
                     .collect();
                 format!("{{{}}}", s.join(", "))
             }
@@ -290,6 +290,6 @@ impl Display for NbtTagType {
                 let s: Vec<String> = nbt_long_array.0.iter().map(|b| b.0.to_string()).collect();
                 format!("[{}]", s.join(", "))
             }
-        }))
+        })
     }
 }
