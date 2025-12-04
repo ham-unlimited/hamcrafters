@@ -59,6 +59,7 @@ mod tests {
 
     use super::*;
 
+    #[ignore = "Reads from non-commited file"]
     #[test]
     fn test_parse_level_dat() {
         read_nbt_file(Path::new("../test-data/test-world/level.dat"))
