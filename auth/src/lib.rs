@@ -68,7 +68,7 @@ pub async fn client_auth(
         .json(&ClientAuthRequest {
             access_token,
             selected_profile,
-            server_id,
+            server_id: sha1,
         })
         .send()
         .await?;
