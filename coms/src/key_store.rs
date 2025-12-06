@@ -1,4 +1,3 @@
-use rand::Rng;
 use rsa::{BigUint, Pkcs1v15Encrypt, RsaPrivateKey, traits::PublicKeyParts};
 
 /// Encryption errors.
