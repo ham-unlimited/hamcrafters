@@ -5,6 +5,7 @@ members = [ "client-handler","coms", "mc-packet-macros", "proxy", "server", "nbt
 [workspace.dependencies]
 mc-coms = { path = "./coms" }
 mc-packet-macros = { path = "./mc-packet-macros" }
+mc-auth = { path = "./auth" }
 proxy = { path = "./proxy" }
 client-handler = { path = "./client-handler" }
 nbt = { path = "./nbt" }

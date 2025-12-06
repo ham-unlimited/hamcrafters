@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 tokio = { workspace = true }
 mc-coms = { workspace = true }
+mc-auth = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
