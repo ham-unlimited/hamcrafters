@@ -3,10 +3,7 @@
 
 //! Crate for handling proxying to another Minecraft server.
 
-use std::{
-    io::{self, Cursor},
-    str::FromStr,
-};
+use std::io::{self, Cursor};
 
 use log::{error, info, warn};
 use mc_coms::{
@@ -16,10 +13,11 @@ use mc_coms::{
     messages::{
         McPacketError, McPacketRead,
         clientbound::{
-            login::{
-                encryption_request::EncryptionRequest,
-                login_success::{GameProfile, LoginSuccess},
+            configuration::{
+                clientbound_known_packs::ClientboundKnownPacks,
+                clientbound_plugin_message::ClientboundPluginMessage, feature_flags::FeatureFlags,
             },
+            login::encryption_request::EncryptionRequest,
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
         serverbound::{
@@ -46,7 +44,6 @@ use tokio::{
         tcp::{OwnedReadHalf, OwnedWriteHalf},
     },
 };
-use uuid::Uuid;
 
 /// An error that occurrs during proxying.
 #[allow(missing_docs)]
@@ -257,7 +254,7 @@ impl<'key> ProxyHandler<'key> {
                 return Ok(true);
             }
             (&ClientState::Login, 0x3) => {
-                self.log_server_bound(packet_id, "Login success");
+                self.log_server_bound(packet_id, "Login Acknowledged");
                 self.log_server_bound(
                     packet_id,
                     &format!("Setting state to {}", ClientState::Configuration),
@@ -360,13 +357,42 @@ impl<'key> ProxyHandler<'key> {
 
                 return Ok(true);
             }
+            (&ClientState::Login, 0x2) => {
+                self.log_client_bound(packet_id, "Login successful");
+            }
+            (&ClientState::Login, 0x3) => {
+                self.log_client_bound(packet_id, "Enable compression");
+                todo!("Compression is not yet supported")
+            }
             (&ClientState::Configuration, 0x0) => {
                 self.log_client_bound(packet_id, "Cookie request");
                 let key = String::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Cookie request key: \"{key}\""));
             }
+            (&ClientState::Configuration, 0x1) => {
+                self.log_client_bound(packet_id, "Clientbound Plugin Message");
+                let clientbound_plugin_message = ClientboundPluginMessage::read(packet)?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Plugin message: {clientbound_plugin_message:?}"),
+                );
+            }
+            (&ClientState::Configuration, 0xC) => {
+                self.log_client_bound(packet_id, "Feature flags");
+                let feature_flags = FeatureFlags::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Feature flags: {feature_flags:?}"));
+            }
+
+            (&ClientState::Configuration, 0xE) => {
+                self.log_client_bound(packet_id, "Clientbound known packs");
+                let known_packs =
+                    ClientboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Known packs: {known_packs:?}"));
+            }
             (state, id) => {
-                warn!("Unsupported packet ID ({id}) for state {state:?} in client-bound packets");
+                warn!(
+                    "Unsupported packet ID ({id:02x}) for state {state:?} in client-bound packets"
+                );
             }
         }
 
