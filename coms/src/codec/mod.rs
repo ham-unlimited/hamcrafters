@@ -1,3 +1,5 @@
+/// Implementation of the Minecraft Identifier type.
+pub mod identifier;
 /// A JsonString.
 pub mod json_string;
 /// UUID type with support for the minecraft serialization/deserialization.

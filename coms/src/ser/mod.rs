@@ -1,4 +1,7 @@
-use std::io::{Read, Write};
+use std::{
+    io::{self, Read, Write},
+    string::FromUtf8Error,
+};
 
 use thiserror::Error;
 
@@ -21,6 +24,10 @@ pub enum ReadingError {
     TooLarge(String),
     #[error("{0}")]
     Message(String),
+    #[error("IO Error: {0}")]
+    IoError(#[from] io::Error),
+    #[error("FromUtf8Error: {0}")]
+    FromUtf8Error(#[from] FromUtf8Error),
 }
 
 /// Error occurred during writing of a packet.

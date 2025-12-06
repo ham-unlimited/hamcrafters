@@ -4,7 +4,7 @@ use crate::{
 };
 use serde::de::{
     self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
-    Visitor,
+    Visitor, value::U32Deserializer,
 };
 use std::{fmt::Display, io::Read};
 
@@ -294,7 +294,8 @@ impl<'de, R: Read> EnumAccess<'de> for &mut Deserializer<R> {
                 "Invalid variant index {variant_index_i32} for enum, cannot convert to u32"
             ))
         })?;
-        let val = seed.deserialize(variant_index_u32.into_deserializer())?;
+        let deserializer: U32Deserializer<ReadingError> = variant_index_u32.into_deserializer();
+        let val = seed.deserialize(deserializer)?;
         Ok((val, self))
     }
 }
