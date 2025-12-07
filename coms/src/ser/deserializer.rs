@@ -145,11 +145,15 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
     }
 
     fn deserialize_newtype_struct<V: Visitor<'de>>(
-        self,
-        _name: &'static str,
-        _visitor: V,
+        mut self,
+        name: &'static str,
+        visitor: V,
     ) -> Result<V::Value, Self::Error> {
-        log::info!("Deserialize newtype struct, name {_name}");
+        if name == "NbtValue" {
+            todo!("");
+        }
+
+        log::warn!("Deserialize unsupported newtype struct, name {name}");
         unimplemented!()
     }
 

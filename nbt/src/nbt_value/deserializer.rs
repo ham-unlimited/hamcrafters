@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{
     Deserializer,
     de::{
-        EnumAccess, IntoDeserializer, MapAccess, VariantAccess, Visitor,
+        EnumAccess, IntoDeserializer, MapAccess, VariantAccess,
         value::{SeqDeserializer, StrDeserializer, StringDeserializer},
     },
 };
@@ -17,6 +17,7 @@ impl<'de> IntoDeserializer<'de, NbtValueError> for NbtValue {
     type Deserializer = Self;
 
     fn into_deserializer(self) -> Self::Deserializer {
+        println!("Into deserializer on NbtValue");
         self
     }
 }
@@ -294,35 +295,35 @@ impl<'de> Deserializer<'de> for NbtValue {
         self.deserialize_str(visitor)
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
         unsupported_value!("Ignored any")
     }
 
-    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_bytes<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
         unsupported_value!("Bytes")
     }
 
-    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
         unsupported_value!("Byte buf")
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_option<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
         unsupported_value!("Option")
     }
 
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -331,8 +332,8 @@ impl<'de> Deserializer<'de> for NbtValue {
 
     fn deserialize_unit_struct<V>(
         self,
-        name: &'static str,
-        visitor: V,
+        _name: &'static str,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
@@ -342,8 +343,8 @@ impl<'de> Deserializer<'de> for NbtValue {
 
     fn deserialize_newtype_struct<V>(
         self,
-        name: &'static str,
-        visitor: V,
+        _name: &'static str,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
@@ -351,7 +352,7 @@ impl<'de> Deserializer<'de> for NbtValue {
         unsupported_value!("Newtype struct")
     }
 
-    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {

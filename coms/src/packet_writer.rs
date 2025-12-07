@@ -63,8 +63,6 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
                     let mut out = [0u8];
 
                     // This is a stream cipher, so this value must be used
-                    // TODO: Wait for aes/crypto-common to update generic array
-                    #[expect(deprecated)]
                     let out_block = GenericArray::from_mut_slice(&mut out);
                     s.cipher.encrypt_block_b2b_mut(block.into(), out_block);
 

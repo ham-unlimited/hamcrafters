@@ -14,8 +14,10 @@ use mc_coms::{
         McPacketError, McPacketRead,
         clientbound::{
             configuration::{
+                clientbound_keep_alive::ClientboundKeepAlive,
                 clientbound_known_packs::ClientboundKnownPacks,
                 clientbound_plugin_message::ClientboundPluginMessage, feature_flags::FeatureFlags,
+                registry_data::RegistryData,
             },
             login::encryption_request::EncryptionRequest,
             status::{pong_response::PongResponse, status_response::ServerStatus},
@@ -23,6 +25,7 @@ use mc_coms::{
         serverbound::{
             configuration::{
                 client_information::ClientInformation,
+                serverbound_known_packs::ServerboundKnownPacks,
                 serverbound_plugin_message::ServerboundPluginMessage,
             },
             handshaking::handshake::Handshake,
@@ -272,6 +275,12 @@ impl<'key> ProxyHandler<'key> {
 
                 self.log_server_bound(packet_id, &format!("Plugin message: {plugin_message:?}"));
             }
+            (&ClientState::Configuration, 0x7) => {
+                self.log_server_bound(packet_id, "Serverbound known packs");
+                let known_packs =
+                    ServerboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
+                self.log_server_bound(packet_id, &format!("Client supports: {known_packs:?}"));
+            }
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in server-bound packets");
             }
@@ -377,6 +386,16 @@ impl<'key> ProxyHandler<'key> {
                     &format!("Plugin message: {clientbound_plugin_message:?}"),
                 );
             }
+            (&ClientState::Configuration, 0x4) => {
+                self.log_client_bound(packet_id, "Clientbound keep alive (configuration)");
+                let keep_alive = ClientboundKeepAlive::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Keep alive request {keep_alive:?}"));
+            }
+            (&ClientState::Configuration, 0x7) => {
+                self.log_client_bound(packet_id, "Registry data packet");
+                let registry_data = RegistryData::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Registry data: {registry_data:?}"));
+            }
             (&ClientState::Configuration, 0xC) => {
                 self.log_client_bound(packet_id, "Feature flags");
                 let feature_flags = FeatureFlags::deserialize(&mut packet.get_deserializer())?;
@@ -387,7 +406,7 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Clientbound known packs");
                 let known_packs =
                     ClientboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
-                self.log_client_bound(packet_id, &format!("Known packs: {known_packs:?}"));
+                self.log_client_bound(packet_id, &format!("Server packs: {known_packs:?}"));
             }
             (state, id) => {
                 warn!(

@@ -9,6 +9,8 @@ use crate::{codec::var_int::VarInt, packet_reader::RawPacket, ser::ReadingError}
 /// Client-bound packages.
 #[allow(unused)]
 pub mod clientbound;
+/// Common models between server/client-bound packages.
+pub mod models;
 /// Server-bound packages.
 #[allow(unused)]
 pub mod serverbound;

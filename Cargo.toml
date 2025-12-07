@@ -7,8 +7,8 @@ mc-coms = { path = "./coms" }
 mc-packet-macros = { path = "./mc-packet-macros" }
 mc-auth = { path = "./auth" }
 proxy = { path = "./proxy" }
-client-handler = { path = "./client-handler" }
 nbt = { path = "./nbt" }
+client-handler = { path = "./client-handler" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 tokio = { version = "1.47.1", features = ["full"] }

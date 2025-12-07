@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, de::Visitor};
 
-use crate::{
-    nbt_types::{NbtByte, NbtByteArray, NbtDouble, NbtFloat, NbtInt, NbtLong, NbtShort, NbtString},
-    nbt_value::nbt_value::NbtValue,
-};
+use crate::nbt_value::nbt_value::NbtValue;
 
 struct NbtValueVisitor;
 
@@ -170,6 +167,6 @@ impl<'de> Deserialize<'de> for NbtValue {
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_any(NbtValueVisitor)
+        deserializer.deserialize_newtype_struct("NbtValue", NbtValueVisitor)
     }
 }

@@ -1132,6 +1132,7 @@ dependencies = [
  "cfb8",
  "log",
  "mc-packet-macros",
+ "nbt",
  "owo-colors",
  "rand",
  "rsa",
