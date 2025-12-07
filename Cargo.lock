@@ -1542,6 +1542,7 @@ name = "proxy"
 version = "0.1.0"
 dependencies = [
  "log",
+ "mc-auth",
  "mc-coms",
  "owo-colors",
  "rand",

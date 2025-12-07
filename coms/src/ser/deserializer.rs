@@ -2,6 +2,7 @@ use crate::{
     codec::var_int::VarInt,
     ser::{NetworkReadExt, ReadingError},
 };
+use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::nbt_value::NbtValue};
 use serde::de::{
     self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
     Visitor, value::U32Deserializer,
@@ -145,12 +146,19 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
     }
 
     fn deserialize_newtype_struct<V: Visitor<'de>>(
-        mut self,
+        self,
         name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Self::Error> {
         if name == "NbtValue" {
-            todo!("");
+            return match NbtNamedTag::read(&mut self.inner)? {
+                Some(nbt) => {
+                    let nbt_value: NbtValue = nbt.into();
+                    let s = visitor.visit_newtype_struct(nbt_value.into_deserializer())?;
+                    Ok(s)
+                }
+                None => visitor.visit_none(),
+            };
         }
 
         log::warn!("Deserialize unsupported newtype struct, name {name}");

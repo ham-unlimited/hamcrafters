@@ -3,6 +3,7 @@ use std::{
     string::FromUtf8Error,
 };
 
+use nbt::{error::NbtError, nbt_value::NbtValueError};
 use thiserror::Error;
 
 use crate::codec::{var_int::VarInt, var_long::VarLong, var_uint::VarUInt, var_ulong::VarULong};
@@ -28,6 +29,10 @@ pub enum ReadingError {
     IoError(#[from] io::Error),
     #[error("FromUtf8Error: {0}")]
     FromUtf8Error(#[from] FromUtf8Error),
+    #[error("Failed to parse nbt: {0}")]
+    NbtParseError(#[from] NbtError),
+    #[error("Faield to parse nbt value: {0}")]
+    NbtValueError(#[from] NbtValueError),
 }
 
 /// Error occurred during writing of a packet.

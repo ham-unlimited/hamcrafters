@@ -157,7 +157,13 @@ impl<'key> ProxyHandler<'key> {
                         Err(e) => return Err(e.into())
                     };
 
-                    self.log_client_bound(packet.id, format!("Packet to client {packet:02x?}").bright_blue().to_string().as_str());
+                    let data_to_print = if packet.data.len() > 20 {
+                        let first_part_of_data = &packet.data[..20];
+                        format!("packet size: {}, first 20 bytes: {first_part_of_data:02x?}", packet.data.len())
+                    } else {
+                        format!("data: {:02x?}", packet.data)
+                    };
+                    self.log_client_bound(packet.id, format!("Packet to client, {}", data_to_print).bright_blue().to_string().as_str());
                     self.handling_packet = true;
 
                     match self.parse_and_log_client_bound_packet(packet.clone()).await {
