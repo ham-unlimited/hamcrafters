@@ -17,7 +17,7 @@ use mc_coms::{
                 clientbound_keep_alive::ClientboundKeepAlive,
                 clientbound_known_packs::ClientboundKnownPacks,
                 clientbound_plugin_message::ClientboundPluginMessage, feature_flags::FeatureFlags,
-                registry_data::RegistryData,
+                registry_data::RegistryData, update_tags::UpdateTags,
             },
             login::encryption_request::EncryptionRequest,
             status::{pong_response::PongResponse, status_response::ServerStatus},
@@ -407,7 +407,11 @@ impl<'key> ProxyHandler<'key> {
                 let feature_flags = FeatureFlags::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Feature flags: {feature_flags:?}"));
             }
-
+            (&ClientState::Configuration, 0xD) => {
+                self.log_client_bound(packet_id, "Update tags");
+                let update_tags = UpdateTags::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Update tags: {update_tags:?}"));
+            }
             (&ClientState::Configuration, 0xE) => {
                 self.log_client_bound(packet_id, "Clientbound known packs");
                 let known_packs =

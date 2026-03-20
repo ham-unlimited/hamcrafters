@@ -10,3 +10,5 @@ pub mod feature_flags;
 pub mod finish_configuration;
 /// Registry data sent from server to client.
 pub mod registry_data;
+/// Update the tags registry of the client.
+pub mod update_tags;
