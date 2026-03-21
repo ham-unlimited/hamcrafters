@@ -22,7 +22,8 @@ use mc_coms::{
             login::encryption_request::EncryptionRequest,
             play::{
                 change_difficulty::ChangeDifficulty, login::Login,
-                player_abilities::PlayerAbilities,
+                player_abilities::PlayerAbilities, set_held_item::SetHeldItem,
+                update_recipes::UpdateRecipes,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
@@ -313,7 +314,7 @@ impl<'key> ProxyHandler<'key> {
         self.log_client_bound(
             packet_id,
             &format!(
-                "client-bound packet with ID {} in state {:?}",
+                "client-bound packet with ID {:02X} in state {:?}",
                 packet_id, self.state,
             ),
         );
@@ -463,6 +464,22 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Player abilities: {player_abilities:?}"),
+                );
+            }
+            (&ClientState::Play, 0x67) => {
+                self.log_client_bound(packet_id, "Set held item");
+                let set_held_item = SetHeldItem::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set held item packet: {set_held_item:?}"),
+                );
+            }
+            (&ClientState::Play, 0x83) => {
+                self.log_client_bound(packet_id, "Update recipes");
+                let update_recipes = UpdateRecipes::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Update recipes packet: {update_recipes:?}"),
                 );
             }
             (state, id) => {
