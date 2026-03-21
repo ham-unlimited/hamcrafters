@@ -1,6 +1,10 @@
 use crate::{
     McPacket,
     codec::{identifier::Identifier, prefixed_array::PrefixedArray, var_int::VarInt},
+    messages::models::{
+        game_mode::{GameMode, PreviousGameMode},
+        position::Position,
+    },
 };
 use mc_packet_macros::mc_packet;
 use serde::{Deserialize, Serialize};
@@ -34,9 +38,9 @@ pub struct Login {
     /// The hashed seed of the world, specifically the first 8 bytes of the SHA-256 of the world's seed.
     pub hashed_seed: i64,
     /// The current game mode of the player. (0 = Survival, 1 = Creative, 2 = Adventure, 3 = Spectator)
-    pub game_mode: u8,
+    pub game_mode: GameMode,
     /// The previous game mode of the player. (-1 = undefined, 0 = Survival, 1 = Creative, 2 = Adventure, 3 = Spectator)
-    pub previous_game_mode: i8,
+    pub previous_game_mode: PreviousGameMode,
     /// Whether the player is in a debug world.
     pub is_debug: bool,
     /// Whether the player is in a flat world.
@@ -58,43 +62,4 @@ pub struct DeathLocation {
     pub dimension_name: Identifier,
     /// The coordinates of the player's death location.
     pub position: Position,
-}
-
-// TODO: MOVE SOMEWHERE MORE RELEVANT.
-// TODO: Test this? E.g. 0100011000000111011000110010110000010101101101001000001100111111 should be x = 18357644, y = 831 and z = -20882616.
-/// Represents a position in the Minecraft world.
-#[derive(Debug)]
-pub struct Position {
-    /// The X coordinate of the position (26-bit).
-    pub x: i32,
-    /// The Y coordinate of the position (12-bit).
-    pub y: i16,
-    /// The Z coordinate of the position (26-bit).
-    pub z: i32,
-}
-
-impl<'de> Deserialize<'de> for Position {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let value = i64::deserialize(deserializer)?;
-
-        let x = (value >> 38) as i32;
-        let y = (value << 52 >> 52) as i16;
-        let z = (value << 26 >> 38) as i32;
-        Ok(Position { x, y, z })
-    }
-}
-
-impl Serialize for Position {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let value = ((self.x as i64 & 0x3FFFFFF) << 38)
-            | ((self.z as i64 & 0x3FFFFFF) << 12)
-            | (self.y as i64 & 0xFFF);
-        value.serialize(serializer)
-    }
 }
