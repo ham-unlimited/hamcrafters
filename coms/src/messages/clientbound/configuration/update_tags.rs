@@ -10,19 +10,24 @@ use crate::{
 #[derive(Debug, Deserialize)]
 #[mc_packet(0x0D)]
 pub struct UpdateTags {
-    tagged_registries: PrefixedArray<TaggedRegistry>,
+    /// A list of tagged registries, each containing a list of tags and their values.
+    pub tagged_registries: PrefixedArray<TaggedRegistry>,
 }
 
 /// New tags for a specific registry.
 #[derive(Debug, Deserialize)]
 pub struct TaggedRegistry {
-    registry: String,
-    tags: PrefixedArray<Tag>,
+    /// The name of the registry.
+    pub registry: String,
+    /// A list of tags within the registry.
+    pub tags: PrefixedArray<Tag>,
 }
 
 /// A list of block ids belonging to the specified tag (e.g. minecraft:climbable).
 #[derive(Debug, Deserialize)]
 pub struct Tag {
-    name: String,
-    values: PrefixedArray<VarInt>,
+    /// The name of the tag.
+    pub name: String,
+    /// A list of numeric ids belonging to the tag.
+    pub values: PrefixedArray<VarInt>,
 }

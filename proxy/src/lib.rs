@@ -20,6 +20,7 @@ use mc_coms::{
                 registry_data::RegistryData, update_tags::UpdateTags,
             },
             login::encryption_request::EncryptionRequest,
+            play::login::Login,
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
         serverbound::{
@@ -281,6 +282,11 @@ impl<'key> ProxyHandler<'key> {
 
                 self.log_server_bound(packet_id, &format!("Plugin message: {plugin_message:?}"));
             }
+            (&ClientState::Configuration, 0x3) => {
+                self.log_server_bound(packet_id, "Finish configuration");
+                self.log_server_bound(packet_id, "Transitioning to state Play");
+                self.state = ClientState::Play;
+            }
             (&ClientState::Configuration, 0x7) => {
                 self.log_server_bound(packet_id, "Serverbound known packs");
                 let known_packs =
@@ -392,6 +398,9 @@ impl<'key> ProxyHandler<'key> {
                     &format!("Plugin message: {clientbound_plugin_message:?}"),
                 );
             }
+            (&ClientState::Configuration, 0x3) => {
+                self.log_client_bound(packet_id, "Finish configuration");
+            }
             (&ClientState::Configuration, 0x4) => {
                 self.log_client_bound(packet_id, "Clientbound keep alive (configuration)");
                 let keep_alive = ClientboundKeepAlive::deserialize(&mut packet.get_deserializer())?;
@@ -410,13 +419,30 @@ impl<'key> ProxyHandler<'key> {
             (&ClientState::Configuration, 0xD) => {
                 self.log_client_bound(packet_id, "Update tags");
                 let update_tags = UpdateTags::deserialize(&mut packet.get_deserializer())?;
-                self.log_client_bound(packet_id, &format!("Update tags: {update_tags:?}"));
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "Update tags for registries: [{}]",
+                        update_tags
+                            .tagged_registries
+                            .inner()
+                            .iter()
+                            .map(|registry| format!("{}, ", registry.registry))
+                            .collect::<String>()
+                            .trim_end_matches(", ")
+                    ),
+                );
             }
             (&ClientState::Configuration, 0xE) => {
                 self.log_client_bound(packet_id, "Clientbound known packs");
                 let known_packs =
                     ClientboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Server packs: {known_packs:?}"));
+            }
+            (&ClientState::Play, 0x30) => {
+                self.log_client_bound(packet_id, "Login (play)");
+                let login = Login::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Login packet: {login:?}"));
             }
             (state, id) => {
                 warn!(
