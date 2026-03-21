@@ -20,7 +20,10 @@ use mc_coms::{
                 registry_data::RegistryData, update_tags::UpdateTags,
             },
             login::encryption_request::EncryptionRequest,
-            play::{change_difficulty::ChangeDifficulty, login::Login},
+            play::{
+                change_difficulty::ChangeDifficulty, login::Login,
+                player_abilities::PlayerAbilities,
+            },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
         serverbound::{
@@ -452,6 +455,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Login (play)");
                 let login = Login::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Login packet: {login:?}"));
+            }
+            (&ClientState::Play, 0x3E) => {
+                self.log_client_bound(packet_id, "Player abilities");
+                let player_abilities =
+                    PlayerAbilities::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Player abilities: {player_abilities:?}"),
+                );
             }
             (state, id) => {
                 warn!(
