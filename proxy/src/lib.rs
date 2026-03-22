@@ -479,7 +479,11 @@ impl<'key> ProxyHandler<'key> {
                 let update_recipes = UpdateRecipes::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(
                     packet_id,
-                    &format!("Update recipes packet: {update_recipes:?}"),
+                    &format!(
+                        "Update recipes packet with {} property sets and {} stone cutter recipes",
+                        update_recipes.property_sets.inner().len(),
+                        update_recipes.stone_cutter_recipes.inner().len()
+                    ),
                 );
             }
             (state, id) => {

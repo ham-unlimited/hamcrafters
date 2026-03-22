@@ -6,3 +6,5 @@ pub mod login;
 pub mod player_abilities;
 /// Client-bound set held item package during play phase.
 pub mod set_held_item;
+/// Client-bound update recipes package during play phase.
+pub mod update_recipes;

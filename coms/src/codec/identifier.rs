@@ -1,13 +1,13 @@
 use std::{fmt::Display, io::Read, num::NonZeroUsize};
 
-use serde::{self, Deserialize};
+use serde::{self, Deserialize, Serialize};
 
 use crate::{codec::var_int::VarInt, ser::ReadingError};
 
 /**
  * An identifier on the form minecraft:thing, implemented as a String prefixed by its length as a VarInt.
  */
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(transparent)]
 pub struct Identifier(pub String);
 

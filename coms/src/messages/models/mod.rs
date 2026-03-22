@@ -4,5 +4,13 @@ pub mod data_pack;
 pub mod difficulty;
 /// A minecraft game mode.
 pub mod game_mode;
+/// A minecraft registry ID set.
+pub mod id_set;
 /// A minecraft coordinate position.
 pub mod position;
+/// A minecraft slot.
+pub mod slot;
+/// A minecraft slot display.
+pub mod slot_display;
+/// An nbt text component.
+pub mod text_component;
