@@ -9,15 +9,14 @@ use serde::{
 };
 
 use crate::{
-    nbt_value::{NbtValueError, nbt_value::NbtValue},
+    nbt_value::{NbtValueError, value::NbtValue},
     unsupported_value,
 };
 
-impl<'de> IntoDeserializer<'de, NbtValueError> for NbtValue {
+impl IntoDeserializer<'_, NbtValueError> for NbtValue {
     type Deserializer = Self;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        println!("Into deserializer on NbtValue");
         self
     }
 }

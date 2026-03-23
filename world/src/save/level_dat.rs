@@ -37,9 +37,8 @@ struct MinecraftLevelDatData {
     data_version: i32,
     #[serde(rename = "DayTime")]
     day_time: i64,
-    // TODO: Use difficulty enum.
     #[serde(rename = "Difficulty")]
-    difficulty: i8,
+    difficulty: Difficulty,
     #[serde(rename = "DifficultyLocked")]
     difficulty_locked: bool,
     // TODO: DimensionData.
@@ -201,6 +200,7 @@ mod test {
 
     use crate::save::level_dat::MinecraftLevelDat;
 
+    #[ignore = "Doesn't work in pipeline as files aren't commited"]
     #[test]
     fn test_deserialize_level_dat() {
         let Some(nbt) = read_nbt_file(Path::new("../test-data/test-world/level.dat"))

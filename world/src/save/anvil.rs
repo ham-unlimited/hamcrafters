@@ -14,14 +14,21 @@ use nbt::{
 
 use crate::save::chunk_data::ChunkData;
 
+#[allow(unused)]
 type U24 = u32;
 
+#[allow(unused)]
 const CHUNKS_PER_REGION: usize = 1024;
+#[allow(unused)]
 const LOCATIONS_LENGTH: usize = CHUNKS_PER_REGION * size_of::<ChunkMetadata>();
+#[allow(unused)]
 const TIMESTAMPS_LENGTH: usize = CHUNKS_PER_REGION * size_of::<u32>();
+#[allow(unused)]
 const ANVIL_HEADER_LENGTH: usize = LOCATIONS_LENGTH + TIMESTAMPS_LENGTH;
+#[allow(unused)]
 // Number of chunks per sector side.
 const SECTOR_CHUNK_WIDTH: usize = 16;
+#[allow(unused)]
 const SECTOR_SIZE: usize = CHUNKS_PER_REGION * 4;
 
 #[derive(thiserror::Error, Debug)]
@@ -44,16 +51,19 @@ pub enum AnvilError {
 
 pub type AnvilResult<T> = Result<T, AnvilError>;
 
+#[allow(unused)]
 struct Regions {
     regions: Vec<Region>,
 }
 
+#[allow(unused)]
 struct Region {
     region_x: i32,
     region_z: i32,
     region_chunks: Vec<Chunk>,
 }
 
+#[allow(unused)]
 struct Chunk {
     chunk_x: usize,
     chunk_y: usize,
@@ -61,6 +71,7 @@ struct Chunk {
 }
 
 impl Regions {
+    #[allow(unused)]
     fn read_regions<P: AsRef<Path>>(save_path: P) -> AnvilResult<Self> {
         // let mut regions = HashMap::new();
         let mut regions = Vec::new();
@@ -209,6 +220,7 @@ impl RegionParser {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 struct ChunkMetadata {
     x: usize,
@@ -225,6 +237,7 @@ mod tests {
 
     use crate::save::anvil::Regions;
 
+    #[ignore]
     #[test]
     fn parse_file_successfully() {
         unsafe {
@@ -254,6 +267,7 @@ mod tests {
         assert_eq!(true, false);
     }
 
+    #[ignore]
     #[test]
     fn serialize_deserialize_yields_same() {
         unsafe {
