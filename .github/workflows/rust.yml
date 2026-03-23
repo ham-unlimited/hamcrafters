@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        feature: [client-handler, proxy]
+        feature: [server, proxy]
 
     name: build (${{ matrix.feature }})
 
