@@ -23,6 +23,8 @@ pub mod messages;
 pub mod packet_reader;
 /// Implements support for writing mc_packets correctly.
 pub mod packet_writer;
+/// Adds definitions of types for trafic recording
+pub mod recording;
 /// Network coms for sending / receiving MC Packets.
 pub mod ser;
 /// Reading / writing (a bit unclear tbh).

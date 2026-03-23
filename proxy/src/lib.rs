@@ -3,7 +3,10 @@
 
 //! Crate for handling proxying to another Minecraft server.
 
+use std::fs;
 use std::io::{self, Cursor};
+use std::path::PathBuf;
+use std::time::{Instant, SystemTime};
 
 use log::{error, info, warn};
 use mc_coms::{
@@ -40,6 +43,7 @@ use mc_coms::{
     },
     packet_reader::{NetworkReader, PacketReadError, RawPacket},
     packet_writer::{NetworkWriter, PacketWriteError},
+    recording::{PacketDirection, RecordedPacket, RecordedSession},
     ser::{NetworkWriteExt, ReadingError, WritingError},
 };
 use owo_colors::OwoColorize;
@@ -88,6 +92,9 @@ pub struct ProxyHandler<'key> {
     key_store: &'key KeyStore,
     state: ClientState,
     handling_packet: bool,
+    record_dir: Option<PathBuf>,
+    recording_packets: Vec<RecordedPacket>,
+    recording_start: Instant,
 }
 
 impl<'key> ProxyHandler<'key> {
@@ -118,6 +125,9 @@ impl<'key> ProxyHandler<'key> {
             key_store,
             state: ClientState::Handshaking,
             handling_packet: false,
+            record_dir: std::env::var("PROXY_RECORD_DIR").ok().map(PathBuf::from),
+            recording_packets: Vec::new(),
+            recording_start: Instant::now(),
         })
     }
 
@@ -131,12 +141,14 @@ impl<'key> ProxyHandler<'key> {
                         Ok(p) => p,
                         Err(PacketReadError::ConnectionClosed) => {
                             warn!("Connection to client was closed");
+                        self.save_recording();
                             return Ok(())
                         }
                         Err(e) => return Err(e.into())
                     };
 
                     self.log_server_bound(packet.id, format!("Packet to server {packet:02x?}").green().to_string().as_str());
+                    self.record_packet(PacketDirection::ServerBound, &packet);
                     self.handling_packet = true;
 
                     match self.parse_and_log_server_bound_packet(packet.clone()).await {
@@ -157,6 +169,7 @@ impl<'key> ProxyHandler<'key> {
                         Ok(p) => p,
                         Err(PacketReadError::ConnectionClosed) => {
                             warn!("Connection to server was closed");
+                            self.save_recording();
                             return Ok(())
                         }
                         Err(e) => return Err(e.into())
@@ -169,6 +182,7 @@ impl<'key> ProxyHandler<'key> {
                         format!("data: {:02x?}", packet.data)
                     };
                     self.log_client_bound(packet.id, format!("Packet to client, {}", data_to_print).bright_blue().to_string().as_str());
+                    self.record_packet(PacketDirection::ClientBound, &packet);
                     self.handling_packet = true;
 
                     match self.parse_and_log_client_bound_packet(packet.clone()).await {
@@ -516,6 +530,54 @@ impl<'key> ProxyHandler<'key> {
             self.state,
             format!("0x{packet_id:02x}").purple(),
         )
+    }
+
+    fn record_packet(&mut self, direction: PacketDirection, packet: &RawPacket) {
+        if self.record_dir.is_none() {
+            return;
+        }
+        let elapsed_time = self.recording_start.elapsed().as_millis() as u64;
+
+        self.recording_packets.push(RecordedPacket {
+            timestamp_ms: elapsed_time,
+            direction,
+            state: self.state.clone(),
+            packet_id: packet.id,
+            data: packet.data.clone(),
+        })
+    }
+
+    fn save_recording(&mut self) {
+        let Some(ref dir) = self.record_dir else {
+            return;
+        };
+
+        let session = RecordedSession {
+            packets: std::mem::take(&mut self.recording_packets),
+        };
+
+        if let Err(e) = fs::create_dir_all(dir) {
+            error!("Failed to create recording directory: {e}");
+            return;
+        }
+
+        let started_at = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let path = dir.join(format!("{started_at}.ron"));
+        let pretty = ron::ser::PrettyConfig::default();
+        match ron::ser::to_string_pretty(&session, pretty) {
+            Ok(contents) => {
+                if let Err(e) = fs::write(&path, contents) {
+                    error!("Failed to write recording file: {e}");
+                } else {
+                    info!("Recording saved to {}", path.display());
+                }
+            }
+            Err(e) => error!("Failed to serialize recording: {e}"),
+        }
     }
 }
 
