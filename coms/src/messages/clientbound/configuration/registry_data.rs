@@ -3,7 +3,7 @@ use crate::{
     codec::{identifier::Identifier, prefixed_array::PrefixedArray},
 };
 use mc_packet_macros::mc_packet;
-use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::nbt_value::NbtValue};
+use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::value::NbtValue};
 use serde::Deserialize;
 
 /// Registry data packet.

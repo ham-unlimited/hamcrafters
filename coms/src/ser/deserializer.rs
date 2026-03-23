@@ -2,7 +2,7 @@ use crate::{
     codec::var_int::VarInt,
     ser::{NetworkReadExt, ReadingError},
 };
-use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::nbt_value::NbtValue};
+use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::value::NbtValue};
 use serde::de::{
     self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
     Visitor, value::U32Deserializer,

@@ -17,8 +17,7 @@ eyre = "0.6.12"
 dotenvy = "0.15.7"
 
 [features]
-# default = ["client-handler"]
-default = ["proxy"]
+default = ["server"]
 
 proxy = ["dep:proxy"]
-client-handler = ["dep:client-handler"]
+server = ["dep:client-handler"]

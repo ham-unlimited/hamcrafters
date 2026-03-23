@@ -6,7 +6,7 @@ proxy:
 
 # Just run the server (default features is real server)
 server:
-	cargo run
+	cargo run --no-default-features --features server
 
 clean_generate:
 	rm -rf generated TMP_GENERATE

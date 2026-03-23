@@ -37,8 +37,9 @@ struct MinecraftLevelDatData {
     data_version: i32,
     #[serde(rename = "DayTime")]
     day_time: i64,
+    // TODO: Use Difficulty enum somehow, from coms crate. (prob restructure to like a common models crate or something)
     #[serde(rename = "Difficulty")]
-    difficulty: Difficulty,
+    difficulty: i8,
     #[serde(rename = "DifficultyLocked")]
     difficulty_locked: bool,
     // TODO: DimensionData.
