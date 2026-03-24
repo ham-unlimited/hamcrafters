@@ -3,7 +3,7 @@ use std::fmt::Display;
 use owo_colors::OwoColorize;
 
 /// The states that the client-server coms can be in.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub enum ClientState {
     /// Handshaking state
     #[default]
