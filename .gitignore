@@ -1,2 +1,8 @@
+.env
+proxy_output
 /target
 test-data/
+generated/
+server.jar
+proxy_output
+TMP_GENERATE/

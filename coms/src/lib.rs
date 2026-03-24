@@ -29,7 +29,7 @@ pub mod ser;
 pub mod serial;
 
 /// Which minecraft protocol version this implementation supports.
-/// 773 ~= 1.28.9, 1.28.10 etc
+/// 773 ~= 1.21.9, 1.21.10 etc.
 pub const SUPPORTED_MINECRAFT_PROTOCOL_VERSION: usize = 773;
 
 /// A client-bound packet.

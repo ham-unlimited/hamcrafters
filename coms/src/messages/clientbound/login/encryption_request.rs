@@ -1,8 +1,7 @@
 use crate::McPacket;
+use crate::codec::prefixed_array::PrefixedArray;
 use mc_packet_macros::mc_packet;
 use serde::{Deserialize, Serialize};
-
-use crate::codec::prefixed_array::PrefixedArray;
 
 /// Encryption request message
 #[derive(Debug, Deserialize, Serialize)]

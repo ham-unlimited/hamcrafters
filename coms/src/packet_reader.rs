@@ -1,14 +1,13 @@
-use std::{
-    io::{self, Cursor},
-    pin::Pin,
-    task::{Context, Poll},
-};
-
 use crate::{
     codec::var_int::VarInt,
     ser::{ReadingError, deserializer::Deserializer},
 };
 use aes::cipher::{BlockDecryptMut, BlockSizeUser, KeyIvInit};
+use std::{
+    io::{self, Cursor},
+    pin::Pin,
+    task::{Context, Poll},
+};
 use thiserror::Error;
 use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 
@@ -22,8 +21,8 @@ pub enum PacketReadError {
     ConnectionClosed,
     #[error("Failed to parse length `{0}`")]
     LengthParseError(String),
-    #[error("The received packet ID was not valid")]
-    InvalidPacketId,
+    #[error("The received packet ID was not valid, err: `{0}`")]
+    InvalidPacketId(ReadingError),
     #[error("Failed to read packet data `{0}`")]
     PacketDataReadError(String),
 }
@@ -120,7 +119,7 @@ impl<R: AsyncRead + Unpin> NetworkReader<R> {
 
         let packet_id = VarInt::decode_async(&mut packet_reader)
             .await
-            .map_err(|_| PacketReadError::InvalidPacketId)?;
+            .map_err(|err| PacketReadError::InvalidPacketId(err))?;
 
         let mut packet_data = Vec::new();
         packet_reader

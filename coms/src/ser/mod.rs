@@ -1,5 +1,9 @@
-use std::io::{Read, Write};
+use std::{
+    io::{self, Read, Write},
+    string::FromUtf8Error,
+};
 
+use nbt::{error::NbtError, nbt_value::NbtValueError};
 use thiserror::Error;
 
 use crate::codec::{var_int::VarInt, var_long::VarLong, var_uint::VarUInt, var_ulong::VarULong};
@@ -21,6 +25,14 @@ pub enum ReadingError {
     TooLarge(String),
     #[error("{0}")]
     Message(String),
+    #[error("IO Error: {0}")]
+    IoError(#[from] io::Error),
+    #[error("FromUtf8Error: {0}")]
+    FromUtf8Error(#[from] FromUtf8Error),
+    #[error("Failed to parse nbt: {0}")]
+    NbtParseError(#[from] NbtError),
+    #[error("Faield to parse nbt value: {0}")]
+    NbtValueError(#[from] NbtValueError),
 }
 
 /// Error occurred during writing of a packet.

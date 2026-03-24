@@ -22,7 +22,7 @@ use mc_coms::{
                 serverbound_plugin_message::ServerboundPluginMessage,
             },
             handshaking::handshake::Handshake,
-            login::encryption_response::EncryptionResponse,
+            login::{encryption_response::EncryptionResponse, login_start::LoginStart},
             status::ping_request::PingRequest,
         },
     },
@@ -59,10 +59,10 @@ impl<'key> ClientHandler<'key> {
         let writer = NetworkWriter::new(BufWriter::new(w));
 
         Self {
-            state: ClientState::Handshaking,
             key_store,
-            network_reader: reader,
+            state: ClientState::Handshaking,
             network_writer: writer,
+            network_reader: reader,
         }
     }
 
@@ -161,12 +161,12 @@ impl<'key> ClientHandler<'key> {
         match packet.id {
             0x0 => {
                 info!("Got login start request");
+                let login_start = LoginStart::deserialize(&mut packet.get_deserializer())?;
+                info!("Login start message: {login_start:?}");
 
                 info!("Creating encryption request");
                 let encryption_request =
                     EncryptionRequest::new(self.key_store.get_der_public_key());
-
-                info!("Encryption request: {encryption_request:02x?}");
 
                 info!("Verify token: {:02x?}", encryption_request.verify_token);
 
@@ -208,7 +208,7 @@ impl<'key> ClientHandler<'key> {
 
                 let login_success = LoginSuccess {
                     profile: GameProfile {
-                        uuid: id,
+                        uuid: id.into(),
                         username: "Pepe".into(),
                         properties: PrefixedArray::empty(),
                     },

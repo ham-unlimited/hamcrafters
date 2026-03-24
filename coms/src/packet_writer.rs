@@ -1,18 +1,16 @@
-use std::io::{self, Cursor};
-
-#[allow(deprecated)]
-use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
-use log::error;
-use serde::Serialize;
-use thiserror::Error;
-use tokio::io::{AsyncWrite, AsyncWriteExt};
-
 use crate::{
     ClientPacket,
     codec::var_int::VarInt,
     messages::McPacket,
     ser::{NetworkWriteExt, WritingError},
 };
+#[allow(deprecated)]
+use aes::cipher::{BlockEncryptMut, BlockSizeUser, KeyIvInit, generic_array::GenericArray};
+use log::error;
+use serde::Serialize;
+use std::io::{self, Cursor};
+use thiserror::Error;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 /// Error that occurrs during the writing of a packet.
 #[allow(missing_docs)]
@@ -50,6 +48,35 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
             cfb8::Encryptor::<aes::Aes128>::new_from_slices(key, key).expect("invalid key");
 
         self.encryption_key = Some(Encryption { cipher });
+
+        Ok(())
+    }
+
+    /// Write some data using this writer.
+    pub async fn write_data(&mut self, data: Vec<u8>) -> Result<(), PacketWriteError> {
+        match self.encryption_key.as_mut() {
+            Some(s) => {
+                let mut bf = Vec::new();
+
+                // Encrypt the raw data, note that our block size is 1 byte, so this is always safe
+                for block in data.chunks(cfb8::Encryptor::<aes::Aes128>::block_size()) {
+                    let mut out = [0u8];
+
+                    // This is a stream cipher, so this value must be used
+                    let out_block = GenericArray::from_mut_slice(&mut out);
+                    s.cipher.encrypt_block_b2b_mut(block.into(), out_block);
+
+                    bf.push(out_block[0]);
+                }
+
+                self.writer.write_all(&bf).await?;
+            }
+            None => {
+                self.writer.write_all(&data).await?;
+            }
+        }
+
+        self.writer.flush().await?;
 
         Ok(())
     }

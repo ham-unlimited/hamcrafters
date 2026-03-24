@@ -1,6 +1,6 @@
 use crate::{
     McPacket,
-    codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional},
+    codec::{mc_uuid::McUuid, prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional},
 };
 use mc_packet_macros::mc_packet;
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,7 @@ pub struct LoginSuccess {
 #[doc(hidden)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GameProfile {
-    pub uuid: Uuid,
+    pub uuid: McUuid,
     pub username: String,
     pub properties: PrefixedArray<Property>,
 }

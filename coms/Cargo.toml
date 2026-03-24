@@ -9,9 +9,11 @@ serde_json = { workspace = true }
 tokio = { workspace = true }
 log = { workspace = true }
 mc-packet-macros = { workspace = true } 
+nbt = { workspace = true }
 bytes = { workspace = true } 
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
+owo-colors = { workspace = true }
 
 # Encryption
 aes = { workspace = true }
@@ -20,4 +22,4 @@ cfb8 = { workspace = true }
 serde_with = "3.15.0"
 rsa = "0.9.8"
 rsa-der = "0.3.0"
-rand = "0.8" # We need 0.8 to be compatible with rsa's dependency on rand_core.
+rand = { workspace = true }

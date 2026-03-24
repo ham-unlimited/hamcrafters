@@ -1,13 +1,12 @@
-use serde::de::{
-    self, IntoDeserializer, MapAccess,
-    value::{SeqDeserializer, StrDeserializer},
-};
-
 use crate::{
     nbt_named_tag::NbtNamedTag,
     ser::{Error, Result},
     tag_type::NbtTagType,
     unsupported,
+};
+use serde::de::{
+    self, IntoDeserializer, MapAccess,
+    value::{SeqDeserializer, StrDeserializer},
 };
 
 /// Deserializer for the NbtTagType handling convertions between it and types implementing [serde::Deserialize].

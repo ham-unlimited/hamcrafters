@@ -1,14 +1,13 @@
-use std::{fmt::Display, io::Read};
-
-use serde::de::{
-    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
-    Visitor,
-};
-
 use crate::{
     codec::var_int::VarInt,
     ser::{NetworkReadExt, ReadingError},
 };
+use nbt::{nbt_named_tag::NbtNamedTag, nbt_value::value::NbtValue};
+use serde::de::{
+    self, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess, VariantAccess,
+    Visitor, value::U32Deserializer,
+};
+use std::{fmt::Display, io::Read};
 
 /// A deserializer for Minecraft packets.
 pub struct Deserializer<R: Read> {
@@ -107,7 +106,6 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
         let s = VarInt::decode(&mut self.inner)
             .map_err(|err| ReadingError::Incomplete(err.to_string()))?; // TODO: Error?
 
-        log::info!("Got string of length {s:?} {}", s.0);
         let mut buf = vec![0; s.0 as usize];
         self.inner
             .read(&mut buf)
@@ -149,10 +147,21 @@ impl<'de, R: Read> de::Deserializer<'de> for &mut Deserializer<R> {
 
     fn deserialize_newtype_struct<V: Visitor<'de>>(
         self,
-        _name: &'static str,
-        _visitor: V,
+        name: &'static str,
+        visitor: V,
     ) -> Result<V::Value, Self::Error> {
-        log::info!("Deserialize newtype struct, name {_name}");
+        if name == "NbtValue" {
+            return match NbtNamedTag::read(&mut self.inner)? {
+                Some(nbt) => {
+                    let nbt_value: NbtValue = nbt.into();
+                    let s = visitor.visit_newtype_struct(nbt_value.into_deserializer())?;
+                    Ok(s)
+                }
+                None => visitor.visit_none(),
+            };
+        }
+
+        log::warn!("Deserialize unsupported newtype struct, name {name}");
         unimplemented!()
     }
 
@@ -297,7 +306,8 @@ impl<'de, R: Read> EnumAccess<'de> for &mut Deserializer<R> {
                 "Invalid variant index {variant_index_i32} for enum, cannot convert to u32"
             ))
         })?;
-        let val = seed.deserialize(variant_index_u32.into_deserializer())?;
+        let deserializer: U32Deserializer<ReadingError> = variant_index_u32.into_deserializer();
+        let val = seed.deserialize(deserializer)?;
         Ok((val, self))
     }
 }

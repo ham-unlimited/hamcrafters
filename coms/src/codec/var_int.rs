@@ -4,8 +4,9 @@ use std::{
     ops::Deref,
 };
 
+use bytes::BufMut;
 use serde::{
-    Deserialize, Deserializer,
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{SeqAccess, Visitor},
 };
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -156,21 +157,21 @@ impl Deref for VarInt {
     }
 }
 
-// impl Serialize for VarInt {
-//     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-//         let mut value = self.0 as u32;
-//         let mut buf = Vec::new();
+impl Serialize for VarInt {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut value = self.0 as u32;
+        let mut buf = Vec::new();
 
-//         while value > 0x7F {
-//             buf.put_u8(value as u8 | 0x80);
-//             value >>= 7;
-//         }
+        while value > 0x7F {
+            buf.put_u8(value as u8 | 0x80);
+            value >>= 7;
+        }
 
-//         buf.put_u8(value as u8);
+        buf.put_u8(value as u8);
 
-//         serializer.serialize_bytes(&buf)
-//     }
-// }
+        serializer.serialize_bytes(&buf)
+    }
+}
 
 impl<'de> Deserialize<'de> for VarInt {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {

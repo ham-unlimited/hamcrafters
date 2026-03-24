@@ -14,12 +14,22 @@ impl<T> PrefixedArray<T> {
     pub fn inner(&self) -> &Vec<T> {
         &self.0
     }
+
+    /// Takes ownership of the contained vector.
+    pub fn take_inner(self) -> Vec<T> {
+        self.0
+    }
 }
 
 impl<T> PrefixedArray<T> {
     /// Create a new empty [PrefixedArray].
     pub fn empty() -> Self {
         Self(vec![])
+    }
+
+    /// Create a new [PrefixedArray] containing the provided data.
+    pub fn new(data: Vec<T>) -> Self {
+        Self(data)
     }
 }
 
@@ -57,6 +67,12 @@ where
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
                 let mut items = Vec::with_capacity(length.0 as usize);
+
+                // let mut items = Vec::new();
+
+                // while let Some(item) = seq.next_element()? {
+                //     items.push(item);
+                // }
 
                 for i in 0..length.0 {
                     let item: T = seq

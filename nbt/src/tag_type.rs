@@ -1,8 +1,14 @@
-use std::io::Read;
+use std::{
+    fmt::{self, Display},
+    io::Read,
+};
+
+use serde::de::{self, Visitor};
 
 use crate::{
     NbtResult,
     error::NbtError,
+    nbt_named_tag::NbtNamedTag,
     nbt_types::{
         NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtFloat, NbtInt, NbtIntArray, NbtList,
         NbtLong, NbtLongArray, NbtShort, NbtString, NbtType,
@@ -80,4 +86,133 @@ impl NbtTagType {
 
     //     Ok(())
     // }
+}
+
+struct NbtTagTypeVisitor;
+
+impl<'de> Visitor<'de> for NbtTagTypeVisitor {
+    type Value = NbtTagType;
+
+    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("any valid NBT tag")
+    }
+
+    fn visit_bool<E: de::Error>(self, v: bool) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagByte(NbtByte(if v { 1 } else { 0 })))
+    }
+
+    fn visit_i8<E: de::Error>(self, v: i8) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagByte(NbtByte(v)))
+    }
+
+    fn visit_i16<E: de::Error>(self, v: i16) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagShort(NbtShort(v)))
+    }
+
+    fn visit_i32<E: de::Error>(self, v: i32) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagInt(NbtInt(v)))
+    }
+
+    fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagLong(NbtLong(v)))
+    }
+
+    fn visit_u8<E: de::Error>(self, v: u8) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagByte(NbtByte(v as i8)))
+    }
+
+    fn visit_u16<E: de::Error>(self, v: u16) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagShort(NbtShort(v as i16)))
+    }
+
+    fn visit_u32<E: de::Error>(self, v: u32) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagInt(NbtInt(v as i32)))
+    }
+
+    fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagLong(NbtLong(v as i64)))
+    }
+
+    fn visit_f32<E: de::Error>(self, v: f32) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagFloat(NbtFloat(v)))
+    }
+
+    fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagDouble(NbtDouble(v)))
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagString(NbtString(v.to_owned())))
+    }
+
+    fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
+        Ok(NbtTagType::TagString(NbtString(v)))
+    }
+
+    fn visit_seq<A: de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let mut items = Vec::new();
+        while let Some(elem) = seq.next_element::<NbtTagType>()? {
+            items.push(elem);
+        }
+        Ok(NbtTagType::TagList(NbtList(items)))
+    }
+
+    fn visit_map<A: de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let mut entries = Vec::new();
+        while let Some((k, v)) = map.next_entry::<String, NbtTagType>()? {
+            entries.push(NbtNamedTag {
+                name: NbtString(k),
+                payload: v,
+            });
+        }
+        Ok(NbtTagType::TagCompound(NbtCompound(entries)))
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for NbtTagType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(NbtTagTypeVisitor)
+    }
+}
+
+impl Display for NbtTagType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!(
+            "{}",
+            match self {
+                NbtTagType::TagEnd => "".to_string(),
+                NbtTagType::TagByte(nbt_byte) => nbt_byte.0.to_string(),
+                NbtTagType::TagShort(nbt_short) => nbt_short.0.to_string(),
+                NbtTagType::TagInt(nbt_int) => nbt_int.0.to_string(),
+                NbtTagType::TagLong(nbt_long) => nbt_long.0.to_string(),
+                NbtTagType::TagFloat(nbt_float) => nbt_float.0.to_string(),
+                NbtTagType::TagDouble(nbt_double) => nbt_double.0.to_string(),
+                NbtTagType::TagByteArray(nbt_byte_array) => {
+                    let s: Vec<String> = nbt_byte_array.0.iter().map(|b| b.0.to_string()).collect();
+                    format!("[{}]", s.join(", "))
+                }
+                NbtTagType::TagString(nbt_string) => nbt_string.0.clone(),
+                NbtTagType::TagList(nbt_list) => {
+                    let s: Vec<String> = nbt_list.0.iter().map(|b| b.to_string()).collect();
+                    format!("[{}]", s.join(", "))
+                }
+                NbtTagType::TagCompound(nbt_compound) => {
+                    let s: Vec<String> = nbt_compound
+                        .0
+                        .iter()
+                        .map(|tag| format!("{}: {}", tag.name.0.clone(), tag.payload.to_string()))
+                        .collect();
+                    format!("{{{}}}", s.join(", "))
+                }
+                NbtTagType::TagIntArray(nbt_int_array) => {
+                    let s: Vec<String> = nbt_int_array.0.iter().map(|b| b.0.to_string()).collect();
+                    format!("[{}]", s.join(", "))
+                }
+                NbtTagType::TagLongArray(nbt_long_array) => {
+                    let s: Vec<String> = nbt_long_array.0.iter().map(|b| b.0.to_string()).collect();
+                    format!("[{}]", s.join(", "))
+                }
+            }
+        ))
+    }
 }

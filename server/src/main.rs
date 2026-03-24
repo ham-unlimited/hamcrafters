@@ -1,6 +1,5 @@
 use eyre::Context;
 use log::info;
-
 use mc_coms::key_store::KeyStore;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
@@ -9,7 +8,7 @@ use tokio::net::TcpStream;
 async fn main() -> eyre::Result<()> {
     dotenvy::dotenv().wrap_err("Failed to read dotenv")?;
     color_eyre::install()?;
-    pretty_env_logger::init();
+    pretty_env_logger::init_timed();
 
     let host = "127.0.0.1:22211";
     let listener = TcpListener::bind(host)
@@ -37,13 +36,13 @@ async fn main() -> eyre::Result<()> {
 
 // TODO: Keystore
 #[cfg(feature = "proxy")]
-async fn handle_connection(stream: TcpStream, _key_store: &KeyStore) -> eyre::Result<()> {
+async fn handle_connection(stream: TcpStream, key_store: &KeyStore) -> eyre::Result<()> {
     use proxy::ProxyHandler;
 
     let proxy_addr = std::env::var("PROXY_TARGET").wrap_err("No proxy address set")?;
 
     info!("Setting up proxy...");
-    let mut handler = ProxyHandler::new(stream, &proxy_addr)
+    let mut handler = ProxyHandler::new(stream, &proxy_addr, key_store)
         .await
         .wrap_err("Failed to setup proxy")?;
     handler
@@ -58,7 +57,7 @@ async fn handle_connection(stream: TcpStream, _key_store: &KeyStore) -> eyre::Re
 async fn handle_connection(stream: TcpStream, key_store: &KeyStore) -> eyre::Result<()> {
     use client_handler::client_handler::ClientHandler;
 
-    let mut handler = ClientHandler::new(stream, key_store);
+    let mut handler = ClientHandler::new(stream, &key_store);
 
     handler
         .run()

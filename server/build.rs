@@ -1,4 +1,4 @@
 fn main() {
-    #[cfg(all(feature = "proxy", feature = "client-handler"))]
-    compile_error!("Features proxy and client-handler are mutually exclusive");
+    #[cfg(all(feature = "proxy", feature = "server"))]
+    compile_error!("Features proxy and server are mutually exclusive");
 }
