@@ -27,6 +27,7 @@ pub enum PacketWriteError {
 /// A writing for writing packets to the network.
 pub struct NetworkWriter<W: AsyncWrite + Unpin> {
     writer: W,
+    data_written: usize,
     encryption_key: Option<Encryption>,
 }
 
@@ -35,8 +36,14 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
     pub fn new(writer: W) -> Self {
         Self {
             writer,
+            data_written: 0,
             encryption_key: None,
         }
+    }
+
+    /// Get the total amount of bytes written to this writer.
+    pub fn get_total_written(&self) -> usize {
+        self.data_written
     }
 
     /// Enable encryption for this writer. Note: once enabled, you cannot disable encryption.
@@ -69,9 +76,11 @@ impl<W: AsyncWrite + Unpin> NetworkWriter<W> {
                     bf.push(out_block[0]);
                 }
 
+                self.data_written += bf.len();
                 self.writer.write_all(&bf).await?;
             }
             None => {
+                self.data_written += data.len();
                 self.writer.write_all(&data).await?;
             }
         }

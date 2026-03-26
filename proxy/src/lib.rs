@@ -136,7 +136,7 @@ impl<'key> ProxyHandler<'key> {
                         Err(e) => return Err(e.into())
                     };
 
-                    self.log_server_bound(packet.id, format!("Packet to server {packet:02x?}").green().to_string().as_str());
+                    self.log_server_bound(packet.id, format!("Packet to server {packet:02x?} (total read {} bytes)", self.client_reader.get_total_read()).green().to_string().as_str());
                     self.handling_packet = true;
 
                     match self.parse_and_log_server_bound_packet(packet.clone()).await {
@@ -168,18 +168,18 @@ impl<'key> ProxyHandler<'key> {
                     } else {
                         format!("data: {:02x?}", packet.data)
                     };
-                    self.log_client_bound(packet.id, format!("Packet to client, {}", data_to_print).bright_blue().to_string().as_str());
+                    self.log_client_bound(packet.id, format!("Packet to client, {} (total read {} bytes)", data_to_print, self.server_reader.get_total_read()).bright_blue().to_string().as_str());
                     self.handling_packet = true;
 
                     match self.parse_and_log_client_bound_packet(packet.clone()).await {
                         Ok(true) => { /* The client has been dealt with */ }
                         Ok(false) => {
-                            self.log_client_bound(packet.id, "Forwarding packet to client");
+                            self.log_client_bound(packet.id, &format!("Forwarding packet to client, (total sent {} bytes)", self.client_writer.get_total_written()));
                             send_raw_packet(&mut self.client_writer, &packet).await?;
                         }
                         Err(err) => {
                             error!("Failed to parse & log client-bound packet, err: {err:?}");
-                            self.log_client_bound(packet.id, "Forwarding packet to client");
+                            self.log_client_bound(packet.id, &format!("Forwarding packet to client, (total sent {} bytes)", self.client_writer.get_total_written()));
                             send_raw_packet(&mut self.client_writer, &packet).await?;
                         }
                     }
@@ -379,6 +379,14 @@ impl<'key> ProxyHandler<'key> {
                 self.client_writer
                     .write_packet(outgoing_encryption_request)
                     .await?;
+
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "Total data written {} bytes",
+                        self.client_writer.get_total_written(),
+                    ),
+                );
 
                 return Ok(true);
             }

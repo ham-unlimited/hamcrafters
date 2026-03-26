@@ -30,6 +30,7 @@ pub enum PacketReadError {
 /// Reader for reading packets from the network based on the underlying [reader].
 pub struct NetworkReader<R: AsyncRead + Unpin> {
     reader: R,
+    bytes_read: usize,
     encryption_key: Option<Encryption>,
 }
 
@@ -67,6 +68,8 @@ impl<R: AsyncRead + Unpin> AsyncRead for NetworkReader<R> {
                 let internal_poll = read.poll_read(cx, buf);
 
                 if matches!(internal_poll, Poll::Ready(Ok(_))) {
+                    self_ref.bytes_read += buf.filled().len() - original_fill;
+
                     // Decrypt the raw data in-place, note that our block size is 1 byte, so this is always safe
                     for block in buf.filled_mut()[original_fill..]
                         .chunks_mut(cfb8::Encryptor::<aes::Aes128>::block_size())
@@ -77,7 +80,14 @@ impl<R: AsyncRead + Unpin> AsyncRead for NetworkReader<R> {
 
                 internal_poll
             }
-            None => read.poll_read(cx, buf),
+            None => {
+                let original_fill = buf.filled().len();
+                let read = read.poll_read(cx, buf);
+                if matches!(read, Poll::Ready(Ok(_))) {
+                    self_ref.bytes_read += buf.filled().len() - original_fill;
+                }
+                read
+            }
         }
     }
 }
@@ -87,8 +97,14 @@ impl<R: AsyncRead + Unpin> NetworkReader<R> {
     pub fn new(reader: R) -> Self {
         Self {
             reader,
+            bytes_read: 0,
             encryption_key: None,
         }
+    }
+
+    /// Get the total amount of bytes read by this reader.
+    pub fn get_total_read(&self) -> usize {
+        self.bytes_read
     }
 
     /// Enable encryption for this communication, can only be enabled, not disabled.
