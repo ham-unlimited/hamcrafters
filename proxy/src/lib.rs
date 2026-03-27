@@ -21,9 +21,14 @@ use mc_coms::{
             },
             login::encryption_request::EncryptionRequest,
             play::{
-                change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
-                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
-                set_held_item::SetHeldItem, update_recipes::UpdateRecipes,
+                change_difficulty::ChangeDifficulty,
+                entity_event::EntityEvent,
+                list_commands::ListCommands,
+                login::Login,
+                player_abilities::PlayerAbilities,
+                recipe_book_settings::{self, RecipeBookSettings},
+                set_held_item::SetHeldItem,
+                update_recipes::UpdateRecipes,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
@@ -488,6 +493,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Player abilities: {player_abilities:?}"),
+                );
+            }
+            (&ClientState::Play, 0x4A) => {
+                self.log_client_bound(packet_id, "Recipe book settings");
+                let recipe_book_settings =
+                    RecipeBookSettings::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Recipe book settings: {recipe_book_settings:?}"),
                 );
             }
             (&ClientState::Play, 0x67) => {
