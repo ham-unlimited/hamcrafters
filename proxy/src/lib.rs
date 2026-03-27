@@ -21,9 +21,9 @@ use mc_coms::{
             },
             login::encryption_request::EncryptionRequest,
             play::{
-                change_difficulty::ChangeDifficulty, login::Login,
-                player_abilities::PlayerAbilities, set_held_item::SetHeldItem,
-                update_recipes::UpdateRecipes,
+                change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
+                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
+                set_held_item::SetHeldItem, update_recipes::UpdateRecipes,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
@@ -459,6 +459,22 @@ impl<'key> ProxyHandler<'key> {
                     packet_id,
                     &format!("Change difficulty packet: {change_difficulty:?}"),
                 );
+            }
+            (&ClientState::Play, 0x10) => {
+                self.log_client_bound(packet_id, "List commands");
+                let list_commands = ListCommands::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "List commands packet: {} command nodes",
+                        list_commands.nodes.inner().len()
+                    ),
+                );
+            }
+            (&ClientState::Play, 0x22) => {
+                self.log_client_bound(packet_id, "Entity event");
+                let entity_event = EntityEvent::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Entity event packet: {entity_event:?}"));
             }
             (&ClientState::Play, 0x30) => {
                 self.log_client_bound(packet_id, "Login (play)");

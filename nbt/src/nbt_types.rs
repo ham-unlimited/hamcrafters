@@ -1,4 +1,4 @@
-use std::{fmt::Display, io::Read};
+use std::io::Read;
 
 use crate::{NbtResult, error::NbtError, nbt_named_tag::NbtNamedTag, tag_type::NbtTagType};
 

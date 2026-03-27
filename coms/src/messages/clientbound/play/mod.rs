@@ -1,5 +1,9 @@
 /// Client-bound change difficulty package during play phase.
 pub mod change_difficulty;
+/// Client-bound entity event package during play phase.
+pub mod entity_event;
+/// Client-bound list commands package during play phase.
+pub mod list_commands;
 /// Client-bound login package during play phase.
 pub mod login;
 /// Client-bound player abilities package during play phase.
