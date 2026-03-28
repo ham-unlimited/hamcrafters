@@ -8,6 +8,8 @@ pub mod list_commands;
 pub mod login;
 /// Client-bound player abilities package during play phase.
 pub mod player_abilities;
+/// Client-bound recipe book add package during play phase.
+pub mod recipe_book_add;
 /// Client-bound recipe book settings package during play phase.
 pub mod recipe_book_settings;
 /// Client-bound set held item package during play phase.

@@ -8,6 +8,8 @@ pub mod game_mode;
 pub mod id_set;
 /// A minecraft coordinate position.
 pub mod position;
+/// A minecraft recipe.
+pub mod recipe;
 /// A minecraft slot.
 pub mod slot;
 /// A minecraft slot display.
