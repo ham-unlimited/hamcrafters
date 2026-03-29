@@ -498,13 +498,12 @@ impl<'key> ProxyHandler<'key> {
             }
             (&ClientState::Play, 0x48) => {
                 self.log_client_bound(packet_id, "Recipe book add");
-                todo!("Something is bork with this deserialization");
                 let recipe_book_add = RecipeBookAdd::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(
                     packet_id,
                     &format!(
                         "Recipe book add packet with {} recipes",
-                        recipe_book_add.recipes.inner().len(),
+                        recipe_book_add.recipes.inner().len()
                     ),
                 );
             }

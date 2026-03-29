@@ -1,7 +1,7 @@
 use serde::{Deserialize, de::Error};
 
 use crate::{
-    codec::{prefixed_array::PrefixedArray, var_int::VarInt},
+    codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional, var_int::VarInt},
     messages::models::{id_set::IdSet, slot_display::SlotDisplay},
 };
 
@@ -17,7 +17,7 @@ pub struct Recipe {
     /// The category ID for the recipe, ID in the minecraft:recipe_book_category registry.
     pub category_id: VarInt,
     /// The ingredients for the recipe. IDs in the minecraft:item registry.
-    pub ingredients: Option<PrefixedArray<IdSet>>,
+    pub ingredients: PrefixedOptional<PrefixedArray<IdSet>>,
     /// The flags for the recipe.
     pub flags: RecipeFlags,
 }
@@ -83,32 +83,55 @@ impl<'de> Deserialize<'de> for RecipeDisplay {
 
                 match id.0 {
                     0 => {
-                        let crafting_shapeless = seq.next_element()?.ok_or_else(|| {
-                            Error::custom("missing crafting shapeless display data")
-                        })?;
+                        let crafting_shapeless = seq
+                            .next_element()
+                            .map_err(|e| {
+                                Error::custom(format!(
+                                    "failed to parse shapeless crafting display data: {e}"
+                                ))
+                            })?
+                            .ok_or_else(|| {
+                                Error::custom("missing crafting shapeless display data")
+                            })?;
                         Ok(RecipeDisplay::CraftingShapeless(crafting_shapeless))
                     }
                     1 => {
                         let crafting_shaped = seq
-                            .next_element()?
+                            .next_element()
+                            .map_err(|e| {
+                                Error::custom(format!(
+                                    "failed to parse crafting shaped display data: {e}"
+                                ))
+                            })?
                             .ok_or_else(|| Error::custom("missing crafting shaped display data"))?;
                         Ok(RecipeDisplay::CraftingShaped(crafting_shaped))
                     }
                     2 => {
                         let furnace = seq
-                            .next_element()?
+                            .next_element()
+                            .map_err(|e| {
+                                Error::custom(format!("failed to parse furnace display data: {e}"))
+                            })?
                             .ok_or_else(|| Error::custom("missing furnace display data"))?;
                         Ok(RecipeDisplay::Furnace(furnace))
                     }
                     3 => {
                         let stonecutter = seq
-                            .next_element()?
+                            .next_element()
+                            .map_err(|e| {
+                                Error::custom(format!(
+                                    "failed to parse stonecutter display data: {e}"
+                                ))
+                            })?
                             .ok_or_else(|| Error::custom("missing stonecutter display data"))?;
                         Ok(RecipeDisplay::StoneCutter(stonecutter))
                     }
                     4 => {
                         let smithing = seq
-                            .next_element()?
+                            .next_element()
+                            .map_err(|e| {
+                                Error::custom(format!("failed to parse smithing display data: {e}"))
+                            })?
                             .ok_or_else(|| Error::custom("missing smithing display data"))?;
                         Ok(RecipeDisplay::Smithing(smithing))
                     }
@@ -126,8 +149,8 @@ impl<'de> Deserialize<'de> for RecipeDisplay {
 /// Information regarding a shapeless crafting recipe.
 #[derive(Debug, Deserialize)]
 pub struct CraftingShapelessDisplay {
-    /// The ingredients for the recipe.
-    pub ingredients: Vec<SlotDisplay>,
+    /// The ingredients for the recipe, in the protocol this is an "ingredients_count" VarInt field followed by an array but that is identical to a PrefixedArray.
+    pub ingredients: PrefixedArray<SlotDisplay>,
     /// The result of the recipe.
     pub result: SlotDisplay,
     /// The crafting station for the recipe.
@@ -141,8 +164,8 @@ pub struct CraftingShapedDisplay {
     pub width: VarInt,
     /// The height of the crafting grid.
     pub height: VarInt,
-    /// The ingredients for the recipe (width should always be width * height).
-    pub ingredients: Vec<SlotDisplay>,
+    /// The ingredients for the recipe, in the protocol this is an "ingredients_count" VarInt field followed by an array but that is identical to a PrefixedArray (length should always be width * height).
+    pub ingredients: PrefixedArray<SlotDisplay>,
     /// The result of the recipe.
     pub result: SlotDisplay,
     /// The crafting station for the recipe.
