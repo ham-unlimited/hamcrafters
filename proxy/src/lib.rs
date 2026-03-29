@@ -204,7 +204,7 @@ impl<'key> ProxyHandler<'key> {
         self.log_server_bound(
             packet_id,
             &format!(
-                "Server-bound packet with ID {} in state {:?}",
+                "Server-bound packet with ID 0x{:02x} in state {:?}",
                 packet_id, self.state,
             ),
         );
@@ -320,7 +320,7 @@ impl<'key> ProxyHandler<'key> {
         self.log_client_bound(
             packet_id,
             &format!(
-                "client-bound packet with ID {:02X} in state {:?}",
+                "client-bound packet with ID 0x{:02X} in state {:?}",
                 packet_id, self.state,
             ),
         );
@@ -538,7 +538,7 @@ impl<'key> ProxyHandler<'key> {
             }
             (state, id) => {
                 warn!(
-                    "Unsupported packet ID ({id:02x}) for state {state:?} in client-bound packets"
+                    "Unsupported packet ID (0x{id:02x}) for state {state:?} in client-bound packets"
                 );
             }
         }
