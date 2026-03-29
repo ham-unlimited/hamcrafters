@@ -26,6 +26,7 @@ use mc_coms::{
                 list_commands::ListCommands,
                 login::Login,
                 player_abilities::PlayerAbilities,
+                recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::{self, RecipeBookSettings},
                 set_held_item::SetHeldItem,
                 update_recipes::UpdateRecipes,
@@ -493,6 +494,18 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Player abilities: {player_abilities:?}"),
+                );
+            }
+            (&ClientState::Play, 0x48) => {
+                self.log_client_bound(packet_id, "Recipe book add");
+                todo!("Something is bork with this deserialization");
+                let recipe_book_add = RecipeBookAdd::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "Recipe book add packet with {} recipes",
+                        recipe_book_add.recipes.inner().len(),
+                    ),
                 );
             }
             (&ClientState::Play, 0x4A) => {
