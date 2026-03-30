@@ -1,4 +1,4 @@
-use nbt::{nbt_types::NbtCompound, snbt::Snbt, tag_type::NbtTagType};
+use nbt::{nbt_types::NbtCompound, tag_type::NbtTagType};
 use serde::de::Error;
 
 /// A minecraft Text Component
