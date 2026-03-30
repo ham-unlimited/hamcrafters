@@ -1,7 +1,7 @@
 use std::{
-    collections::HashMap,
     fmt::{self, Display},
-    io::Read,
+    io::{self, Read},
+    marker::PhantomData,
 };
 
 use serde::de::{self, Visitor};
@@ -152,99 +152,49 @@ impl<'de> Visitor<'de> for NbtTagTypeVisitor {
     }
 
     fn visit_seq<A: de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        struct SeqReader<'a, 'de, A: de::SeqAccess<'de>> {
+            seq: &'a mut A,
+            marker: PhantomData<&'de ()>,
+        }
+
+        impl<'de, A: de::SeqAccess<'de>> Read for SeqReader<'_, 'de, A> {
+            fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+                if buf.is_empty() {
+                    return Ok(0);
+                }
+
+                for (i, byte) in buf.iter_mut().enumerate() {
+                    match self.seq.next_element::<u8>() {
+                        Ok(Some(v)) => *byte = v,
+                        Ok(None) => {
+                            if i == 0 {
+                                return Ok(0);
+                            }
+                            return Err(io::Error::new(
+                                io::ErrorKind::UnexpectedEof,
+                                "unexpected end of nbt payload",
+                            ));
+                        }
+                        Err(err) => {
+                            return Err(io::Error::other(err.to_string()));
+                        }
+                    }
+                }
+
+                Ok(buf.len())
+            }
+        }
+
         let tag_id: u8 = seq
             .next_element()?
             .ok_or_else(|| de::Error::custom("expected tag id"))?;
 
-        match tag_id {
-            0 => Ok(NbtTagType::TagEnd),
-            1 => {
-                let v: i8 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected byte payload"))?;
-                Ok(NbtTagType::TagByte(NbtByte(v)))
-            }
-            2 => {
-                let v: i16 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected short payload"))?;
-                Ok(NbtTagType::TagShort(NbtShort(v)))
-            }
-            3 => {
-                let v: i32 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected int payload"))?;
-                Ok(NbtTagType::TagInt(NbtInt(v)))
-            }
-            4 => {
-                let v: i64 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected long payload"))?;
-                Ok(NbtTagType::TagLong(NbtLong(v)))
-            }
-            5 => {
-                let v: f32 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected float payload"))?;
-                Ok(NbtTagType::TagFloat(NbtFloat(v)))
-            }
-            6 => {
-                let v: f64 = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected double payload"))?;
-                Ok(NbtTagType::TagDouble(NbtDouble(v)))
-            }
-            7 => {
-                let v: Vec<i8> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected byte array payload"))?;
-                Ok(NbtTagType::TagByteArray(NbtByteArray(
-                    v.into_iter().map(NbtByte).collect(),
-                )))
-            }
-            8 => {
-                let v: String = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected string payload"))?;
-                Ok(NbtTagType::TagString(NbtString(v)))
-            }
-            9 => {
-                let v: Vec<NbtTagType> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected list payload"))?;
-                Ok(NbtTagType::TagList(NbtList(v)))
-            }
-            10 => {
-                let map: HashMap<String, NbtTagType> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected compound payload"))?;
-                let entries = map
-                    .into_iter()
-                    .map(|(k, v)| NbtNamedTag {
-                        name: NbtString(k),
-                        payload: v,
-                    })
-                    .collect();
-                Ok(NbtTagType::TagCompound(NbtCompound(entries)))
-            }
-            11 => {
-                let v: Vec<i32> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected int array payload"))?;
-                Ok(NbtTagType::TagIntArray(NbtIntArray(
-                    v.into_iter().map(NbtInt).collect(),
-                )))
-            }
-            12 => {
-                let v: Vec<i64> = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::custom("expected long array payload"))?;
-                Ok(NbtTagType::TagLongArray(NbtLongArray(
-                    v.into_iter().map(NbtLong).collect(),
-                )))
-            }
-            b => Err(de::Error::custom(format!("invalid tag id {b}"))),
-        }
+        let mut reader = SeqReader {
+            seq: &mut seq,
+            marker: PhantomData,
+        };
+        NbtTagType::read(tag_id, &mut reader)
+            .map_err(|err| de::Error::custom(format!("failed to parse nbt payload: {err}")))
     }
 
     fn visit_map<A: de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {

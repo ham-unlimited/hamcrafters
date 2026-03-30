@@ -42,25 +42,15 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
-                println!("PrefixedOptional: present = {present}");
+                if !present {
+                    return Ok(PrefixedOptional(None));
+                }
 
                 let Some(v) = seq.next_element()? else {
-                    if !present {
-                        return Ok(PrefixedOptional(None));
-                    }
-
                     return Err(de::Error::custom(
                         "Expected element, should exist because of prefix boolean but data not present",
                     ));
                 };
-
-                if !present {
-                    return Err(de::Error::custom(
-                        "Did not expect an element, but found one.",
-                    ));
-                }
-
-                // TODO: maybe check for extra elements lol :3
 
                 Ok(PrefixedOptional(v))
             }

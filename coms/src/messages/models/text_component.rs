@@ -1,4 +1,4 @@
-use nbt::{nbt_types::NbtCompound, tag_type::NbtTagType};
+use nbt::{nbt_types::NbtCompound, snbt::Snbt, tag_type::NbtTagType};
 use serde::de::Error;
 
 /// A minecraft Text Component
@@ -14,6 +14,7 @@ impl<'de> serde::Deserialize<'de> for TextComponent {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let nbt = NbtTagType::deserialize(deserializer)
             .map_err(|err| Error::custom(format!("Failed to deserialize TextComponent: {err}")))?;
+
         match nbt {
             NbtTagType::TagString(s) => Ok(Self::Literal(s.0)),
             NbtTagType::TagCompound(c) => Ok(Self::Compound(c)),
