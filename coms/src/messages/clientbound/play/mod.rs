@@ -12,6 +12,8 @@ pub mod player_abilities;
 pub mod recipe_book_add;
 /// Client-bound recipe book settings package during play phase.
 pub mod recipe_book_settings;
+/// Client-bound server data package during play phase.
+pub mod server_data;
 /// Client-bound set held item package during play phase.
 pub mod set_held_item;
 /// Client-bound synchronize player position package during play phase.

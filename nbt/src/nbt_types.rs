@@ -87,10 +87,6 @@ impl NbtType for NbtFloat {
         r.read_exact(&mut bs)?;
         Ok(Self(f32::from_be_bytes(bs)))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagFloat(self)
-    // }
 }
 
 /// A eight-byte floating point number in NBT format.
@@ -103,10 +99,6 @@ impl NbtType for NbtDouble {
         r.read_exact(&mut bs)?;
         Ok(Self(f64::from_be_bytes(bs)))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagDouble(self)
-    // }
 }
 
 /// An array containing NbtBytes.
@@ -124,10 +116,6 @@ impl NbtType for NbtByteArray {
         }
         Ok(Self(buffer))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagByteArray(self)
-    // }
 }
 
 /// A string in NBT format.
@@ -146,10 +134,6 @@ impl NbtType for NbtString {
 
         Ok(Self(s))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagString(self)
-    // }
 }
 
 /// A list containing any NBT type, expected to only contain a single nbt type.
@@ -179,10 +163,6 @@ impl NbtType for NbtList {
 
         Ok(Self(buffer))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagList(self)
-    // }
 }
 
 /// An NBT compound, basically a JSON map in NBT format.
@@ -205,10 +185,6 @@ impl NbtType for NbtCompound {
 
         Ok(Self(buffer))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagCompound(self)
-    // }
 }
 
 /// An array of integers in NBT format.
@@ -227,10 +203,6 @@ impl NbtType for NbtIntArray {
 
         Ok(Self(buffer))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagIntArray(self)
-    // }
 }
 
 /// An array of longs in NBT format.
@@ -249,8 +221,4 @@ impl NbtType for NbtLongArray {
 
         Ok(Self(buffer))
     }
-
-    // fn to_tag_type(self) -> NbtTagType {
-    //     NbtTagType::TagLongArray(self)
-    // }
 }

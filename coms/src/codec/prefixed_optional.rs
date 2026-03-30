@@ -42,6 +42,8 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
+                println!("PrefixedOptional: present = {present}");
+
                 let Some(v) = seq.next_element()? else {
                     if !present {
                         return Ok(PrefixedOptional(None));

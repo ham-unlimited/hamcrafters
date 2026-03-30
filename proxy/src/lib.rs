@@ -28,6 +28,7 @@ use mc_coms::{
                 player_abilities::PlayerAbilities,
                 recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::{self, RecipeBookSettings},
+                server_data::ServerData,
                 set_held_item::SetHeldItem,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes,
@@ -525,6 +526,11 @@ impl<'key> ProxyHandler<'key> {
                     packet_id,
                     &format!("Recipe book settings: {recipe_book_settings:?}"),
                 );
+            }
+            (&ClientState::Play, 0x54) => {
+                self.log_client_bound(packet_id, "Server data");
+                let server_data = ServerData::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Server data packet: {server_data:?}"));
             }
             (&ClientState::Play, 0x67) => {
                 self.log_client_bound(packet_id, "Set held item");

@@ -66,6 +66,8 @@ where
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
+                println!("PrefixedArray: length = {}", length.0);
+
                 let mut items = Vec::with_capacity(length.0 as usize);
 
                 for i in 0..length.0 {
