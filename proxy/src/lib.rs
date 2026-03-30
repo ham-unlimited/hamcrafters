@@ -23,9 +23,9 @@ use mc_coms::{
             play::{
                 change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
                 list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
-                recipe_book_add::RecipeBookAdd, recipe_book_settings::RecipeBookSettings,
-                server_data::ServerData, set_held_item::SetHeldItem,
-                synchronize_player_position::SynchronizePlayerPosition,
+                player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
+                recipe_book_settings::RecipeBookSettings, server_data::ServerData,
+                set_held_item::SetHeldItem, synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
@@ -493,6 +493,18 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Player abilities: {player_abilities:?}"),
+                );
+            }
+            (&ClientState::Play, 0x44) => {
+                self.log_client_bound(packet_id, "Player info update");
+                let player_info_update =
+                    PlayerInfoUpdate::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "Player info update packet with {} players: {player_info_update:?}",
+                        player_info_update.players.inner().len()
+                    ),
                 );
             }
             (&ClientState::Play, 0x46) => {
