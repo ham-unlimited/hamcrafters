@@ -1,5 +1,3 @@
-use std::path::Prefix;
-
 use crate::{
     McPacket,
     codec::{identifier::Identifier, prefixed_array::PrefixedArray, var_int::VarInt},

@@ -29,6 +29,7 @@ use mc_coms::{
                 recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::{self, RecipeBookSettings},
                 set_held_item::SetHeldItem,
+                synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
@@ -494,6 +495,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Player abilities: {player_abilities:?}"),
+                );
+            }
+            (&ClientState::Play, 0x46) => {
+                self.log_client_bound(packet_id, "Synchronize player position");
+                let synchronize_player_position =
+                    SynchronizePlayerPosition::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Synchronize player position packet: {synchronize_player_position:?}"),
                 );
             }
             (&ClientState::Play, 0x48) => {
