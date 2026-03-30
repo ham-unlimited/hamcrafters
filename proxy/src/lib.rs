@@ -22,7 +22,8 @@ use mc_coms::{
             login::encryption_request::EncryptionRequest,
             play::{
                 change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
-                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
+                initialize_world_border::InitializeWorldBorder, list_commands::ListCommands,
+                login::Login, player_abilities::PlayerAbilities,
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
                 set_held_item::SetHeldItem, synchronize_player_position::SynchronizePlayerPosition,
@@ -480,6 +481,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Entity event");
                 let entity_event = EntityEvent::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Entity event packet: {entity_event:?}"));
+            }
+            (&ClientState::Play, 0x2A) => {
+                self.log_client_bound(packet_id, "Initialize world border");
+                let initialize_world_border =
+                    InitializeWorldBorder::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Initialize world border packet: {initialize_world_border:?}"),
+                );
             }
             (&ClientState::Play, 0x30) => {
                 self.log_client_bound(packet_id, "Login (play)");
