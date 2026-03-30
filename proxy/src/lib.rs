@@ -21,15 +21,10 @@ use mc_coms::{
             },
             login::encryption_request::EncryptionRequest,
             play::{
-                change_difficulty::ChangeDifficulty,
-                entity_event::EntityEvent,
-                list_commands::ListCommands,
-                login::Login,
-                player_abilities::PlayerAbilities,
-                recipe_book_add::RecipeBookAdd,
-                recipe_book_settings::{self, RecipeBookSettings},
-                server_data::ServerData,
-                set_held_item::SetHeldItem,
+                change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
+                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
+                recipe_book_add::RecipeBookAdd, recipe_book_settings::RecipeBookSettings,
+                server_data::ServerData, set_held_item::SetHeldItem,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes,
             },
@@ -60,6 +55,8 @@ use tokio::{
         tcp::{OwnedReadHalf, OwnedWriteHalf},
     },
 };
+
+const BYTES_TO_LOG: usize = 42;
 
 /// An error that occurrs during proxying.
 #[allow(missing_docs)]
@@ -170,9 +167,9 @@ impl<'key> ProxyHandler<'key> {
                         Err(e) => return Err(e.into())
                     };
 
-                    let data_to_print = if packet.data.len() > 20 {
-                        let first_part_of_data = &packet.data[..20];
-                        format!("packet size: {}, first 20 bytes: {first_part_of_data:02x?}", packet.data.len())
+                    let data_to_print = if packet.data.len() > BYTES_TO_LOG {
+                        let first_part_of_data = &packet.data[..BYTES_TO_LOG];
+                        format!("packet size: {}, first {BYTES_TO_LOG} bytes: {first_part_of_data:02x?}", packet.data.len())
                     } else {
                         format!("data: {:02x?}", packet.data)
                     };
