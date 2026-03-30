@@ -24,3 +24,5 @@ pub mod set_held_item;
 pub mod synchronize_player_position;
 /// Client-bound update recipes package during play phase.
 pub mod update_recipes;
+/// Client-bound update time package during play phase.
+pub mod update_time;

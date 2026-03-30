@@ -27,7 +27,7 @@ use mc_coms::{
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
                 set_held_item::SetHeldItem, synchronize_player_position::SynchronizePlayerPosition,
-                update_recipes::UpdateRecipes,
+                update_recipes::UpdateRecipes, update_time::UpdateTime,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
@@ -558,6 +558,11 @@ impl<'key> ProxyHandler<'key> {
                     packet_id,
                     &format!("Set held item packet: {set_held_item:?}"),
                 );
+            }
+            (&ClientState::Play, 0x6F) => {
+                self.log_client_bound(packet_id, "Update time");
+                let update_time = UpdateTime::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Update time packet: {update_time:?}"));
             }
             (&ClientState::Play, 0x83) => {
                 self.log_client_bound(packet_id, "Update recipes");
