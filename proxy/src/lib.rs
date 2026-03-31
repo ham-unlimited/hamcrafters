@@ -26,7 +26,8 @@ use mc_coms::{
                 login::Login, player_abilities::PlayerAbilities,
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
-                set_held_item::SetHeldItem, synchronize_player_position::SynchronizePlayerPosition,
+                set_default_spawn_position::SetDefaultSpawnPosition, set_held_item::SetHeldItem,
+                synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes, update_time::UpdateTime,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
@@ -550,6 +551,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Server data");
                 let server_data = ServerData::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Server data packet: {server_data:?}"));
+            }
+            (&ClientState::Play, 0x5F) => {
+                self.log_client_bound(packet_id, "Set default spawn position");
+                let set_default_spawn_position =
+                    SetDefaultSpawnPosition::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set default spawn position packet: {set_default_spawn_position:?}"),
+                );
             }
             (&ClientState::Play, 0x67) => {
                 self.log_client_bound(packet_id, "Set held item");
