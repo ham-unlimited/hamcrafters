@@ -21,15 +21,25 @@ use mc_coms::{
             },
             login::encryption_request::EncryptionRequest,
             play::{
-                change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
-                game_event::GameEvent, initialize_world_border::InitializeWorldBorder,
-                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
-                player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
-                recipe_book_settings::RecipeBookSettings, server_data::ServerData,
-                set_default_spawn_position::SetDefaultSpawnPosition, set_held_item::SetHeldItem,
+                change_difficulty::ChangeDifficulty,
+                entity_event::EntityEvent,
+                game_event::GameEvent,
+                initialize_world_border::InitializeWorldBorder,
+                list_commands::ListCommands,
+                login::Login,
+                player_abilities::PlayerAbilities,
+                player_info_update::PlayerInfoUpdate,
+                recipe_book_add::RecipeBookAdd,
+                recipe_book_settings::RecipeBookSettings,
+                server_data::ServerData,
+                set_center_chunk::{self, SetCenterChunk},
+                set_default_spawn_position::SetDefaultSpawnPosition,
+                set_held_item::SetHeldItem,
                 set_ticking_rate::SetTickingRate,
+                step_tick::StepTick,
                 synchronize_player_position::SynchronizePlayerPosition,
-                update_recipes::UpdateRecipes, update_time::UpdateTime,
+                update_recipes::UpdateRecipes,
+                update_time::UpdateTime,
             },
             status::{pong_response::PongResponse, status_response::ServerStatus},
         },
@@ -558,6 +568,14 @@ impl<'key> ProxyHandler<'key> {
                 let server_data = ServerData::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Server data packet: {server_data:?}"));
             }
+            (&ClientState::Play, 0x5C) => {
+                self.log_client_bound(packet_id, "Set center chunk");
+                let set_center_chunk = SetCenterChunk::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set center chunk packet: {set_center_chunk:?}"),
+                );
+            }
             (&ClientState::Play, 0x5F) => {
                 self.log_client_bound(packet_id, "Set default spawn position");
                 let set_default_spawn_position =
@@ -587,6 +605,11 @@ impl<'key> ProxyHandler<'key> {
                     packet_id,
                     &format!("Set ticking rate packet: {set_tick_rate:?}"),
                 );
+            }
+            (&ClientState::Play, 0x7E) => {
+                self.log_client_bound(packet_id, "Step tick");
+                let step_tick = StepTick::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Step tick packet: {step_tick:?}"));
             }
             (&ClientState::Play, 0x83) => {
                 self.log_client_bound(packet_id, "Update recipes");
