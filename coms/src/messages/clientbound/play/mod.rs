@@ -24,6 +24,8 @@ pub mod server_data;
 pub mod set_default_spawn_position;
 /// Client-bound set held item package during play phase.
 pub mod set_held_item;
+/// Client-bound set ticking rate package during play phase.
+pub mod set_ticking_rate;
 /// Client-bound synchronize player position package during play phase.
 pub mod synchronize_player_position;
 /// Client-bound update recipes package during play phase.

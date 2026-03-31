@@ -27,6 +27,7 @@ use mc_coms::{
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
                 set_default_spawn_position::SetDefaultSpawnPosition, set_held_item::SetHeldItem,
+                set_ticking_rate::SetTickingRate,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes, update_time::UpdateTime,
             },
@@ -578,6 +579,14 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Update time");
                 let update_time = UpdateTime::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Update time packet: {update_time:?}"));
+            }
+            (&ClientState::Play, 0x7D) => {
+                self.log_client_bound(packet_id, "Set ticking rate");
+                let set_tick_rate = SetTickingRate::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set ticking rate packet: {set_tick_rate:?}"),
+                );
             }
             (&ClientState::Play, 0x83) => {
                 self.log_client_bound(packet_id, "Update recipes");
