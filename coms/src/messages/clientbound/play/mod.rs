@@ -2,6 +2,8 @@
 pub mod change_difficulty;
 /// Client-bound entity event package during play phase.
 pub mod entity_event;
+/// Client-bound game event package during play phase.
+pub mod game_event;
 /// Client-bound initialize world border package during play phase.
 pub mod initialize_world_border;
 /// Client-bound list commands package during play phase.
