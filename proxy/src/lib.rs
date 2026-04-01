@@ -36,6 +36,7 @@ use mc_coms::{
                 set_default_spawn_position::SetDefaultSpawnPosition,
                 set_held_item::SetHeldItem,
                 set_ticking_rate::SetTickingRate,
+                spawn_entity::SpawnEntity,
                 step_tick::StepTick,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_recipes::UpdateRecipes,
@@ -468,6 +469,14 @@ impl<'key> ProxyHandler<'key> {
                 let known_packs =
                     ClientboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Server packs: {known_packs:?}"));
+            }
+            (&ClientState::Play, 0x0) => {
+                self.log_client_bound(packet_id, "Bundle delimiter");
+            }
+            (&ClientState::Play, 0x1) => {
+                self.log_client_bound(packet_id, "Spawn entity");
+                let spawn_entity = SpawnEntity::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Spawn entity packet: {spawn_entity:?}"));
             }
             (&ClientState::Play, 0x0a) => {
                 self.log_client_bound(packet_id, "Change difficulty");

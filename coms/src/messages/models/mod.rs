@@ -1,3 +1,5 @@
+/// A rotation angle in steps of 1/256 of a full turn.
+pub mod angle;
 /// Information about a minecraft Data pack.
 pub mod data_pack;
 /// A minecraft difficulty level.
@@ -16,3 +18,5 @@ pub mod slot;
 pub mod slot_display;
 /// An nbt text component.
 pub mod text_component;
+/// A velocity in minecraft (LpVec3).
+pub mod velocity;

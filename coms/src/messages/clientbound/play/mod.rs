@@ -28,6 +28,8 @@ pub mod set_default_spawn_position;
 pub mod set_held_item;
 /// Client-bound set ticking rate package during play phase.
 pub mod set_ticking_rate;
+/// Client-bound spawn entity package during play phase.
+pub mod spawn_entity;
 /// Client-bound step tick package during play phase.
 pub mod step_tick;
 /// Client-bound synchronize player position package during play phase.
