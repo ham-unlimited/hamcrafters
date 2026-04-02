@@ -34,6 +34,7 @@ use mc_coms::{
                 server_data::ServerData,
                 set_center_chunk::{self, SetCenterChunk},
                 set_default_spawn_position::SetDefaultSpawnPosition,
+                set_entity_metadata::SetEntityMetadata,
                 set_held_item::SetHeldItem,
                 set_ticking_rate::SetTickingRate,
                 spawn_entity::SpawnEntity,
