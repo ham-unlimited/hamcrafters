@@ -36,6 +36,8 @@ pub mod spawn_entity;
 pub mod step_tick;
 /// Client-bound synchronize player position package during play phase.
 pub mod synchronize_player_position;
+/// Client-bound update attributes package during play phase.
+pub mod update_attributes;
 /// Client-bound update recipes package during play phase.
 pub mod update_recipes;
 /// Client-bound update time package during play phase.
