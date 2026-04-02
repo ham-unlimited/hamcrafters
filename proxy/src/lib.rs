@@ -594,6 +594,15 @@ impl<'key> ProxyHandler<'key> {
                     &format!("Set default spawn position packet: {set_default_spawn_position:?}"),
                 );
             }
+            (&ClientState::Play, 0x61) => {
+                self.log_client_bound(packet_id, "Set entity metadata");
+                let set_entity_metadata =
+                    SetEntityMetadata::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set entity metadata packet: {set_entity_metadata:?}"),
+                );
+            }
             (&ClientState::Play, 0x67) => {
                 self.log_client_bound(packet_id, "Set held item");
                 let set_held_item = SetHeldItem::deserialize(&mut packet.get_deserializer())?;

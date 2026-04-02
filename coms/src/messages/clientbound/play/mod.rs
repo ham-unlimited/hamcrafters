@@ -24,6 +24,8 @@ pub mod server_data;
 pub mod set_center_chunk;
 /// Client-bound set default spawn position package during play phase.
 pub mod set_default_spawn_position;
+/// Client-bound set entity metadata package during play phase.
+pub mod set_entity_metadata;
 /// Client-bound set held item package during play phase.
 pub mod set_held_item;
 /// Client-bound set ticking rate package during play phase.
