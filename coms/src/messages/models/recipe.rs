@@ -203,6 +203,8 @@ pub struct StoneCutterDisplay {
 /// A smithing recipe.
 #[derive(Debug, Deserialize)]
 pub struct SmithingDisplay {
+    /// The template item for the recipe.
+    pub template: SlotDisplay,
     /// The base item for the recipe.
     pub base: SlotDisplay,
     /// The addition item for the recipe.
