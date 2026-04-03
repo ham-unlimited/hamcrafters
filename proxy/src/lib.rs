@@ -32,9 +32,10 @@ use mc_coms::{
                 recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings,
                 server_data::ServerData,
-                set_center_chunk::{self, SetCenterChunk},
+                set_center_chunk::SetCenterChunk,
                 set_default_spawn_position::SetDefaultSpawnPosition,
-                set_entity_metadata::SetEntityMetadata,
+                set_entity_equipment::SetEntityEquipment,
+                set_entity_metadata::{self, SetEntityMetadata},
                 set_held_item::SetHeldItem,
                 set_ticking_rate::SetTickingRate,
                 spawn_entity::SpawnEntity,
@@ -603,6 +604,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Set entity metadata packet: {set_entity_metadata:?}"),
+                );
+            }
+            (&ClientState::Play, 0x64) => {
+                self.log_client_bound(packet_id, "Set entity equipment");
+                let set_entity_equipment =
+                    SetEntityEquipment::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set entity equipment packet: {set_entity_equipment:?}"),
                 );
             }
             (&ClientState::Play, 0x67) => {
