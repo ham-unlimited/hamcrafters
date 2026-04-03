@@ -33,6 +33,7 @@ use mc_coms::{
                 recipe_book_settings::RecipeBookSettings,
                 server_data::ServerData,
                 set_center_chunk::SetCenterChunk,
+                set_container_content::SetContainerContent,
                 set_default_spawn_position::SetDefaultSpawnPosition,
                 set_entity_equipment::SetEntityEquipment,
                 set_entity_metadata::{self, SetEntityMetadata},
@@ -500,6 +501,15 @@ impl<'key> ProxyHandler<'key> {
                         "List commands packet: {} command nodes",
                         list_commands.nodes.inner().len()
                     ),
+                );
+            }
+            (&ClientState::Play, 0x12) => {
+                self.log_client_bound(packet_id, "Set Container Content");
+                let set_container_content =
+                    SetContainerContent::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set container content packet: {set_container_content:?}"),
                 );
             }
             (&ClientState::Play, 0x22) => {
