@@ -42,6 +42,7 @@ use mc_coms::{
                 step_tick::StepTick,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_attributes::UpdateAttributes,
+                update_entity_position::UpdateEntityPosition,
                 update_recipes::UpdateRecipes,
                 update_time::UpdateTime,
             },
@@ -524,6 +525,15 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(packet_id, "Login (play)");
                 let login = Login::deserialize(&mut packet.get_deserializer())?;
                 self.log_client_bound(packet_id, &format!("Login packet: {login:?}"));
+            }
+            (&ClientState::Play, 0x33) => {
+                self.log_client_bound(packet_id, "Update entity position");
+                let update_entity_position =
+                    UpdateEntityPosition::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Update entity position packet: {update_entity_position:?}"),
+                );
             }
             (&ClientState::Play, 0x3E) => {
                 self.log_client_bound(packet_id, "Player abilities");

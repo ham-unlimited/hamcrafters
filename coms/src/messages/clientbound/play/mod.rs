@@ -22,6 +22,8 @@ pub mod recipe_book_settings;
 pub mod server_data;
 /// Client-bound set center chunk package during play phase.
 pub mod set_center_chunk;
+/// Client-bound set container content package during play phase.
+pub mod set_container_content;
 /// Client-bound set default spawn position package during play phase.
 pub mod set_default_spawn_position;
 /// Client-bound set entity equipment package during play phase.
@@ -40,6 +42,8 @@ pub mod step_tick;
 pub mod synchronize_player_position;
 /// Client-bound update attributes package during play phase.
 pub mod update_attributes;
+/// Client-bound update entity position package during play phase.
+pub mod update_entity_position;
 /// Client-bound update recipes package during play phase.
 pub mod update_recipes;
 /// Client-bound update time package during play phase.
