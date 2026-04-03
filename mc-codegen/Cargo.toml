@@ -1,0 +1,9 @@
+[package]
+name = "mc-codegen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eyre = "0.6.12"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
