@@ -30,6 +30,10 @@ pub mod set_default_spawn_position;
 pub mod set_entity_equipment;
 /// Client-bound set entity metadata package during play phase.
 pub mod set_entity_metadata;
+/// Client-bound set experience package during play phase.
+pub mod set_experience;
+/// Client-bound set health package during play phase.
+pub mod set_health;
 /// Client-bound set held item package during play phase.
 pub mod set_held_item;
 /// Client-bound set ticking rate package during play phase.

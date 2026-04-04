@@ -29,8 +29,8 @@ use mc_coms::{
                 set_center_chunk::SetCenterChunk, set_container_content::SetContainerContent,
                 set_default_spawn_position::SetDefaultSpawnPosition,
                 set_entity_equipment::SetEntityEquipment, set_entity_metadata::SetEntityMetadata,
-                set_held_item::SetHeldItem, set_ticking_rate::SetTickingRate,
-                spawn_entity::SpawnEntity, step_tick::StepTick,
+                set_experience::SetExperience, set_health::SetHealth, set_held_item::SetHeldItem,
+                set_ticking_rate::SetTickingRate, spawn_entity::SpawnEntity, step_tick::StepTick,
                 synchronize_player_position::SynchronizePlayerPosition,
                 update_advancements::UpdateAdvancements, update_attributes::UpdateAttributes,
                 update_entity_position::UpdateEntityPosition, update_recipes::UpdateRecipes,
@@ -481,6 +481,9 @@ impl<'key> ProxyHandler<'key> {
                     &format!("Change difficulty packet: {change_difficulty:?}"),
                 );
             }
+            (&ClientState::Play, 0x0c) => {
+                self.log_client_bound(packet_id, "Client tick end");
+            }
             (&ClientState::Play, 0x10) => {
                 self.log_client_bound(packet_id, "List commands");
                 let list_commands = ListCommands::deserialize(&mut packet.get_deserializer())?;
@@ -623,6 +626,19 @@ impl<'key> ProxyHandler<'key> {
                     packet_id,
                     &format!("Set entity equipment packet: {set_entity_equipment:?}"),
                 );
+            }
+            (&ClientState::Play, 0x65) => {
+                self.log_client_bound(packet_id, "Set experience");
+                let set_experience = SetExperience::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!("Set experience packet: {set_experience:?}"),
+                );
+            }
+            (&ClientState::Play, 0x66) => {
+                self.log_client_bound(packet_id, "Set health");
+                let set_health = SetHealth::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(packet_id, &format!("Set health packet: {set_health:?}"));
             }
             (&ClientState::Play, 0x67) => {
                 self.log_client_bound(packet_id, "Set held item");
