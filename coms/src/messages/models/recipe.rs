@@ -1,7 +1,7 @@
 use serde::{Deserialize, de::Error};
 
 use crate::{
-    codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional, var_int::VarInt},
+    codec::{prefixed_array::PrefixedArray, var_int::VarInt},
     messages::models::{id_set::IdSet, slot_display::SlotDisplay},
 };
 
@@ -17,7 +17,7 @@ pub struct Recipe {
     /// The category ID for the recipe, ID in the minecraft:recipe_book_category registry.
     pub category_id: VarInt,
     /// The ingredients for the recipe. IDs in the minecraft:item registry.
-    pub ingredients: PrefixedOptional<PrefixedArray<IdSet>>,
+    pub ingredients: Option<PrefixedArray<IdSet>>,
     /// The flags for the recipe.
     pub flags: RecipeFlags,
 }

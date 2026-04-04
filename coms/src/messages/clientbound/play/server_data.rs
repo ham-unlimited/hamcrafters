@@ -1,10 +1,8 @@
 use crate::{
-    McPacket,
-    codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional, var_int::VarInt},
-    messages::models::text_component::TextComponent,
+    McPacket, codec::prefixed_array::PrefixedArray, messages::models::text_component::TextComponent,
 };
 use mc_packet_macros::mc_packet;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Clientbound server data packet.
 #[derive(Debug, Deserialize)]
@@ -13,5 +11,5 @@ pub struct ServerData {
     /// The MOTD of the server.
     pub motd: TextComponent,
     /// Icon bytes in the PNG format.
-    pub icon: PrefixedOptional<PrefixedArray<i8>>,
+    pub icon: Option<PrefixedArray<i8>>,
 }

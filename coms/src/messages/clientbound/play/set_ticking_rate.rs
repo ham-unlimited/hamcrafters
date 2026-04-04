@@ -1,10 +1,6 @@
-use crate::{
-    McPacket,
-    codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional, var_int::VarInt},
-    messages::models::text_component::TextComponent,
-};
+use crate::McPacket;
 use mc_packet_macros::mc_packet;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Clientbound server data packet.
 #[derive(Debug, Deserialize)]

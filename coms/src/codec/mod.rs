@@ -6,8 +6,6 @@ pub mod json_string;
 pub mod mc_uuid;
 /// Implementation of the minecraft Prefixed Array
 pub mod prefixed_array;
-/// Implementation of the minecraft Prefixed Optional
-pub mod prefixed_optional;
 /// Implementation for reading/writing Uuids in the Minecraft codec spec.
 pub mod uuid;
 /// Implementation of the Minecraft VarInt type.

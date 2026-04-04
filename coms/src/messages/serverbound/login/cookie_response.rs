@@ -1,5 +1,5 @@
 use crate::McPacket;
-use crate::codec::{prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional};
+use crate::codec::prefixed_array::PrefixedArray;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
@@ -8,5 +8,5 @@ use serde::Deserialize;
 #[mc_packet(0x04)]
 pub struct CookieResponse {
     key: String,
-    payload: PrefixedOptional<PrefixedArray<u8>>,
+    payload: Option<PrefixedArray<u8>>,
 }

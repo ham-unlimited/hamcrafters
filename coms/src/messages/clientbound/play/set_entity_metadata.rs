@@ -2,7 +2,7 @@ use crate::{
     McPacket,
     codec::{
         identifier::Identifier, mc_uuid::McUuid, prefixed_array::PrefixedArray,
-        prefixed_optional::PrefixedOptional, var_int::VarInt, var_long::VarLong,
+        var_int::VarInt, var_long::VarLong,
     },
     messages::models::{position::Position, slot::Slot, text_component::TextComponent},
 };
@@ -433,9 +433,9 @@ pub enum PaintingVariant {
         /// The texture asset ID for the painting.
         asset_id: Identifier,
         /// The displayed title, if present.
-        title: PrefixedOptional<TextComponent>,
+        title: Option<TextComponent>,
         /// The displayed author, if present.
-        author: PrefixedOptional<TextComponent>,
+        author: Option<TextComponent>,
     },
 }
 
@@ -463,13 +463,13 @@ pub struct Particle {
 #[derive(Debug, Deserialize)]
 pub struct ProfileOverrides {
     /// Skin texture override (from the player's textures directory).
-    pub body: PrefixedOptional<Identifier>,
+    pub body: Option<Identifier>,
     /// Cape texture override.
-    pub cape: PrefixedOptional<Identifier>,
+    pub cape: Option<Identifier>,
     /// Elytra texture override.
-    pub elytra: PrefixedOptional<Identifier>,
+    pub elytra: Option<Identifier>,
     /// Model override (0 = wide, 1 = slim).
-    pub model: PrefixedOptional<VarInt>,
+    pub model: Option<VarInt>,
 }
 
 /// A resolvable player profile (either partial or complete).
@@ -562,7 +562,7 @@ pub struct ProfileProperty {
     /// The property value (base64-encoded JSON).
     pub value: String,
     /// The Yggdrasil signature for this property, if present.
-    pub signature: PrefixedOptional<String>,
+    pub signature: Option<String>,
 }
 
 /// The value of an entity metadata field.
@@ -583,7 +583,7 @@ pub enum EntityMetadataValue {
     /// Type 5: Text Component
     TextComponent(TextComponent),
     /// Type 6: Optional Text Component
-    OptionalTextComponent(PrefixedOptional<TextComponent>),
+    OptionalTextComponent(Option<TextComponent>),
     /// Type 7: Slot
     Slot(Slot),
     /// Type 8: Boolean
@@ -593,11 +593,11 @@ pub enum EntityMetadataValue {
     /// Type 10: Position
     Position(Position),
     /// Type 11: Optional Position
-    OptionalPosition(PrefixedOptional<Position>),
+    OptionalPosition(Option<Position>),
     /// Type 12: Direction (VarInt enum: Down=0, Up=1, North=2, South=3, West=4, East=5)
     Direction(Direction),
     /// Type 13: Optional Living Entity Reference (Optional UUID)
-    OptionalLivingEntityRef(PrefixedOptional<McUuid>),
+    OptionalLivingEntityRef(Option<McUuid>),
     /// Type 14: Block State (ID in the block state registry)
     BlockState(VarInt),
     /// Type 15: Optional Block State (0 for absent/air; otherwise an ID in the block state registry)
@@ -637,7 +637,7 @@ pub enum EntityMetadataValue {
     /// Type 32: Zombie Nautilus Variant (ID in minecraft:zombie_nautilus_variant registry)
     ZombieNautilusVariant(VarInt),
     /// Type 33: Optional Global Position (dimension identifier + block position; absent if boolean is false)
-    OptionalGlobalPosition(PrefixedOptional<(Identifier, Position)>),
+    OptionalGlobalPosition(Option<(Identifier, Position)>),
     /// Type 34: Painting Variant (ID in minecraft:painting_variant registry, or an inline definition)
     PaintingVariant(PaintingVariant),
     /// Type 35: Sniffer State (VarInt enum)

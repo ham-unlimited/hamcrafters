@@ -1,13 +1,9 @@
 use crate::{
     McPacket,
-    codec::{
-        prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional, var_int::VarInt,
-        var_long::VarLong,
-    },
-    messages::models::text_component::TextComponent,
+    codec::{var_int::VarInt, var_long::VarLong},
 };
 use mc_packet_macros::mc_packet;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Client-bound initialize world border packet.
 #[derive(Debug, Deserialize)]

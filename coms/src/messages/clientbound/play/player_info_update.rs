@@ -1,13 +1,7 @@
 use crate::{
     McPacket,
-    codec::{
-        identifier::Identifier, mc_uuid::McUuid, prefixed_array::PrefixedArray,
-        prefixed_optional::PrefixedOptional, var_int::VarInt,
-    },
-    messages::models::{
-        game_mode::GameMode, id_set::IdSet, slot_display::SlotDisplay,
-        text_component::TextComponent,
-    },
+    codec::{mc_uuid::McUuid, prefixed_array::PrefixedArray, var_int::VarInt},
+    messages::models::{game_mode::GameMode, text_component::TextComponent},
 };
 use mc_packet_macros::mc_packet;
 use serde::{
@@ -177,14 +171,14 @@ pub struct GameProfileProperty {
     /// Value (max 32767 bytes)
     pub value: String,
     /// Signature (optional, max 1024 bytes)
-    pub signature: PrefixedOptional<String>,
+    pub signature: Option<String>,
 }
 
 /// The information to initialize a player's chat session.
 #[derive(Debug, Deserialize)]
 pub struct InitializeChatInfo {
     /// The data to update for that player (if present).
-    pub data: PrefixedOptional<ChatData>,
+    pub data: Option<ChatData>,
 }
 
 /// The chat data to initialize a player's chat session.
@@ -225,7 +219,7 @@ pub struct UpdateLatencyInfo {
 #[derive(Debug, Deserialize)]
 pub struct UpdateDisplayNameInfo {
     /// The player's display name in the player list (TAB) if present.
-    pub display_name: PrefixedOptional<TextComponent>,
+    pub display_name: Option<TextComponent>,
 }
 
 /// The information to update a player's list priority (for sorting in the player list).

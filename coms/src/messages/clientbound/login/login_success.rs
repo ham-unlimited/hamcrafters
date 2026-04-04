@@ -1,10 +1,9 @@
 use crate::{
     McPacket,
-    codec::{mc_uuid::McUuid, prefixed_array::PrefixedArray, prefixed_optional::PrefixedOptional},
+    codec::{mc_uuid::McUuid, prefixed_array::PrefixedArray},
 };
 use mc_packet_macros::mc_packet;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 /// Login success message, returns the game profile of the mc player
 #[doc(hidden)]
