@@ -6,6 +6,8 @@ pub mod entity_event;
 pub mod game_event;
 /// Client-bound initialize world border package during play phase.
 pub mod initialize_world_border;
+/// Client-bound level chunk with light package during play phase.
+pub mod level_chunk_with_light;
 /// Client-bound list commands package during play phase.
 pub mod list_commands;
 /// Client-bound login package during play phase.

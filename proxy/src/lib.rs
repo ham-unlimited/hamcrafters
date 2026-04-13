@@ -23,7 +23,7 @@ use mc_coms::{
             play::{
                 change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
                 game_event::GameEvent, initialize_world_border::InitializeWorldBorder,
-                list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
+                level_chunk_with_light::LevelChunkWithLight, list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
                 set_center_chunk::SetCenterChunk, set_container_content::SetContainerContent,
@@ -521,6 +521,22 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!("Initialize world border packet: {initialize_world_border:?}"),
+                );
+            }
+            (&ClientState::Play, 0x2C) => {
+                self.log_client_bound(packet_id, "Level chunk with light");
+                let level_chunk_with_light =
+                    LevelChunkWithLight::deserialize(&mut packet.get_deserializer())?;
+                self.log_client_bound(
+                    packet_id,
+                    &format!(
+                        "Level chunk with light packet: chunk ({}, {}), {} block entities, {} sky light arrays, {} block light arrays",
+                        level_chunk_with_light.chunk_x,
+                        level_chunk_with_light.chunk_z,
+                        level_chunk_with_light.block_entities.inner().len(),
+                        level_chunk_with_light.sky_light_arrays.inner().len(),
+                        level_chunk_with_light.block_light_arrays.inner().len(),
+                    ),
                 );
             }
             (&ClientState::Play, 0x30) => {
