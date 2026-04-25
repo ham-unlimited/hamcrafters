@@ -1,4 +1,4 @@
-use crate::{McPacket, codec::mc_uuid::McUuid};
+use crate::{codec::mc_uuid::McUuid, McPacket};
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 

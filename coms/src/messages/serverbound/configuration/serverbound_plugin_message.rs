@@ -1,9 +1,9 @@
 use std::io::{self, Cursor, Read};
 
 use crate::{
-    McPacket,
     codec::{identifier::Identifier, var_int::VarInt},
     messages::{McPacketError, McPacketRead},
+    McPacket,
 };
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;

@@ -1,4 +1,4 @@
-use crate::{McPacket, codec::var_int::VarInt};
+use crate::{codec::var_int::VarInt, McPacket};
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 

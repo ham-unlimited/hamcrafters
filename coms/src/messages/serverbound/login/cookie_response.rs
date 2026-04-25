@@ -1,5 +1,5 @@
-use crate::McPacket;
 use crate::codec::prefixed_array::PrefixedArray;
+use crate::McPacket;
 use mc_packet_macros::mc_packet;
 use serde::Deserialize;
 
