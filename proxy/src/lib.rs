@@ -312,6 +312,14 @@ impl<'key> ProxyHandler<'key> {
                 self.log_server_bound(packet_id, &format!("Client supports: {known_packs:?}"));
             }
             (&ClientState::Play, 0x00) => {
+                self.log_server_bound(packet_id, "Confirm teleportation");
+                let confirm_teleportation =
+                    ConfirmTeleportation::deserialize(&mut packet.get_deserializer())?;
+                self.log_server_bound(
+                    packet_id,
+                    &format!("Confirm teleportation: {confirm_teleportation:?}"),
+                );
+            }
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in server-bound packets");
             }
@@ -532,12 +540,13 @@ impl<'key> ProxyHandler<'key> {
                 self.log_client_bound(
                     packet_id,
                     &format!(
-                        "Level chunk with light packet: chunk ({}, {}), {} block entities, {} sky light arrays, {} block light arrays",
+                        "Level chunk with light packet: chunk ({}, {}), {} block entities, {} sky light arrays, {} block light arrays, DATA: {:?}",
                         level_chunk_with_light.chunk_x,
                         level_chunk_with_light.chunk_z,
                         level_chunk_with_light.block_entities.inner().len(),
                         level_chunk_with_light.sky_light_arrays.inner().len(),
                         level_chunk_with_light.block_light_arrays.inner().len(),
+                        level_chunk_with_light.data,
                     ),
                 );
             }
