@@ -23,6 +23,7 @@ use mc_coms::{
             },
             handshaking::handshake::Handshake,
             login::{encryption_response::EncryptionResponse, login_start::LoginStart},
+            play::confirm_teleportation::ConfirmTeleportation,
             status::ping_request::PingRequest,
         },
     },
@@ -279,13 +280,21 @@ impl<'key> ClientHandler<'key> {
         Ok(())
     }
 
-    #[allow(unreachable_code, clippy::match_single_binding)] // TODO: remove when we have implemented stuff.
     async fn handle_play_packet(&mut self, packet: RawPacket) -> Result<(), ClientError> {
         match packet.id {
+            0x00 => {
+                let confirm_teleportation =
+                    ConfirmTeleportation::deserialize(&mut packet.get_deserializer())?;
+
+                info!(
+                    "Client confirmed teleportation with ID: {}",
+                    confirm_teleportation.teleport_id.0
+                );
+            }
             id => {
                 return Err(ClientError::UnsupportedPacketId {
                     packet_id: id,
-                    state: ClientState::Configuration,
+                    state: ClientState::Play,
                 });
             }
         }

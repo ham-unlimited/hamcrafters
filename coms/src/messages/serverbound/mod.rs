@@ -4,5 +4,7 @@ pub mod configuration;
 pub mod handshaking;
 /// Server-bound packages during the login state.
 pub mod login;
+/// Server-bound packages during the play state.
+pub mod play;
 /// Server-bound packages during the status state.
 pub mod status;

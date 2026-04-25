@@ -23,7 +23,8 @@ use mc_coms::{
             play::{
                 change_difficulty::ChangeDifficulty, entity_event::EntityEvent,
                 game_event::GameEvent, initialize_world_border::InitializeWorldBorder,
-                level_chunk_with_light::LevelChunkWithLight, list_commands::ListCommands, login::Login, player_abilities::PlayerAbilities,
+                level_chunk_with_light::LevelChunkWithLight, list_commands::ListCommands,
+                login::Login, player_abilities::PlayerAbilities,
                 player_info_update::PlayerInfoUpdate, recipe_book_add::RecipeBookAdd,
                 recipe_book_settings::RecipeBookSettings, server_data::ServerData,
                 set_center_chunk::SetCenterChunk, set_container_content::SetContainerContent,
@@ -310,6 +311,7 @@ impl<'key> ProxyHandler<'key> {
                     ServerboundKnownPacks::deserialize(&mut packet.get_deserializer())?;
                 self.log_server_bound(packet_id, &format!("Client supports: {known_packs:?}"));
             }
+            (&ClientState::Play, 0x00) => {
             (state, id) => {
                 warn!("Unsupported packet ID ({id}) for state {state:?} in server-bound packets");
             }
